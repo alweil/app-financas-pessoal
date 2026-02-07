@@ -1,0 +1,34 @@
+from sqlalchemy.orm import Session
+
+from app.models import Category
+from app.modules.categories.schemas import CategoryCreate
+from app.seeds.categories import DEFAULT_CATEGORIES
+
+
+def create_category(db: Session, user_id: int, payload: CategoryCreate) -> Category:
+    category = Category(
+        user_id=user_id,
+        name=payload.name,
+        parent_id=payload.parent_id,
+        icon=payload.icon,
+        color=payload.color,
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+def seed_default_categories(db: Session, user_id: int) -> list[Category]:
+    created: list[Category] = []
+    for item in DEFAULT_CATEGORIES:
+        parent = Category(user_id=user_id, name=item["name"])
+        db.add(parent)
+        db.flush()
+        created.append(parent)
+        for sub_name in item["subcategories"]:
+            sub = Category(user_id=user_id, name=sub_name, parent_id=parent.id)
+            db.add(sub)
+            created.append(sub)
+    db.commit()
+    return created

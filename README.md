@@ -1,0 +1,139 @@
+# Assessor Financeiro (Backend)
+
+Backend modular monolítico para registrar contas, transações, categorias (com subcategorias), orçamentos e ingestão de notificações por email.
+
+## Pré-requisitos
+- Python 3.11+
+- Docker (para Postgres e Redis)
+
+## Configuração
+1. Copie o arquivo .env.example para .env e ajuste as variáveis.
+2. Suba os serviços de banco e fila com Docker Compose.
+3. Instale as dependências Python.
+4. Execute as migrações do Alembic.
+5. Inicie a API.
+
+## Execução sem Docker
+Alguns endpoints funcionam sem banco. Para isso:
+1. Instale as dependências Python.
+2. Inicie a API.
+
+Endpoints que funcionam sem banco:
+- GET /health
+- POST /email/parse
+- POST /email/parse-to-transaction
+- POST /ai/categorize
+
+## Scripts principais
+- Iniciar API: uvicorn app.main:app --reload
+- Migrações Alembic: alembic upgrade head
+
+## Variáveis de ambiente
+- APP_NAME
+- ENVIRONMENT
+- DATABASE_URL
+- REDIS_URL
+- SECRET_KEY
+
+## Endpoints
+
+### Saúde
+GET /health
+
+### Email Parser
+POST /email/parse
+Payload:
+{
+	"message_id": "string",
+	"from_address": "string",
+	"subject": "string",
+	"body": "string",
+	"bank_source": "string|null"
+}
+
+POST /email/parse-to-transaction
+Payload:
+{
+	"account_id": 1,
+	"category_id": 10,
+	"email": { ... RawEmailIngest ... }
+}
+
+POST /email/parse-and-create
+Payload:
+{
+	"account_id": 1,
+	"category_id": 10,
+	"email": { ... RawEmailIngest ... }
+}
+
+### AI Agent
+POST /ai/categorize
+Payload:
+{
+	"merchant": "string|null",
+	"description": "string|null"
+}
+
+### Contas
+POST /accounts
+Payload:
+{
+	"bank_name": "string",
+	"account_type": "checking|savings|credit_card|investment",
+	"nickname": "string|null"
+}
+
+### Categorias
+POST /categories
+Payload:
+{
+	"name": "string",
+	"parent_id": 1,
+	"icon": "string|null",
+	"color": "string|null"
+}
+
+### Transações
+POST /transactions
+Payload:
+{
+	"account_id": 1,
+	"amount": 10.5,
+	"merchant": "string|null",
+	"description": "string|null",
+	"transaction_date": "2026-02-04T10:00:00Z",
+	"transaction_type": "purchase|pix_in|pix_out|unknown",
+	"payment_method": "credit_card|debit_card|pix|boleto",
+	"card_last4": "1234",
+	"installments_total": 5,
+	"installments_current": 2,
+	"category_id": 10,
+	"raw_email_id": 100
+}
+
+### Orçamentos
+POST /budgets
+Payload:
+{
+	"category_id": 1,
+	"amount_limit": 1000,
+	"period": "weekly|monthly|yearly",
+	"start_date": "2026-02-01T00:00:00Z"
+}
+
+## Seeds de categorias
+O arquivo de seeds está em app/seeds/categories.py. A função seed_default_categories está em app/modules/categories/service.py.
+
+## Observações
+- O endpoint /email/parse-and-create depende do banco e grava a transação com vínculo ao email bruto.
+- O campo card_last4 é preenchido quando encontrado nos emails.
+
+## Estrutura
+- app/modules/accounts
+- app/modules/categories
+- app/modules/transactions
+- app/modules/budgets
+- app/modules/email_parser
+- app/modules/ai_agent
+- app/modules/notifications
