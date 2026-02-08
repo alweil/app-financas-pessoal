@@ -164,6 +164,28 @@
             border-radius: 8px;
             margin-bottom: 16px;
         }
+
+        .notice {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .notice.success {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .notice.info {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .notice.error {
+            background: #fee;
+            color: #c33;
+        }
         
         .btn {
             background: #3498db;
@@ -179,6 +201,10 @@
         
         .btn-success {
             background: #27ae60;
+        }
+
+        .btn-secondary {
+            background: #7f8c8d;
         }
         
         .account-card {
@@ -202,6 +228,26 @@
             align-items: center;
             gap: 8px;
         }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .input,
+        .select {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .helper {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
@@ -214,9 +260,80 @@
     </div>
     
     <div id="error"></div>
+    <div id="status"></div>
     
     <!-- Contas -->
     <div id="accounts-section" class="section active">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Criar Usuario</span>
+            </div>
+            <div class="field">
+                <label class="label" for="register-email">Email</label>
+                <input id="register-email" class="input" type="email" placeholder="user@example.com" />
+            </div>
+            <div class="field">
+                <label class="label" for="register-password">Senha</label>
+                <input id="register-password" class="input" type="password" placeholder="Crie uma senha" />
+            </div>
+            <button class="btn btn-success" onclick="registerUser()">Criar Usuario</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Login</span>
+            </div>
+            <div class="field">
+                <label class="label" for="login-email">Email</label>
+                <input id="login-email" class="input" type="email" placeholder="user@example.com" />
+            </div>
+            <div class="field">
+                <label class="label" for="login-password">Senha</label>
+                <input id="login-password" class="input" type="password" placeholder="Digite sua senha" />
+            </div>
+            <button class="btn btn-success" onclick="login()">Entrar</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Autenticacao</span>
+            </div>
+            <div class="field">
+                <label class="label" for="token-input">Token (Bearer)</label>
+                <input id="token-input" class="input" type="password" placeholder="Cole o access_token" />
+                <div class="helper">Usado para listar e criar contas. Salvo localmente no navegador.</div>
+            </div>
+            <div class="info-row">
+                <span class="label">Usuario logado</span>
+                <span class="value" id="current-user-email">-</span>
+            </div>
+            <button class="btn btn-secondary" onclick="logout()">Limpar Token</button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Nova Conta</span>
+            </div>
+            <div class="field">
+                <label class="label" for="bank-name">Banco</label>
+                <input id="bank-name" class="input" type="text" placeholder="Ex: Nubank" />
+            </div>
+            <div class="field">
+                <label class="label" for="account-type">Tipo</label>
+                <select id="account-type" class="select">
+                    <option value="checking">Conta Corrente</option>
+                    <option value="savings">Poupanca</option>
+                    <option value="credit_card">Cartao Credito</option>
+                    <option value="investment">Investimento</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="nickname">Apelido (opcional)</label>
+                <input id="nickname" class="input" type="text" placeholder="Ex: Cartao roxo" />
+            </div>
+            <button class="btn btn-success" onclick="createAccount()">➕ Criar Conta</button>
+        </div>
+
         <div id="accounts-list">
             <div class="loading">Carregando contas...</div>
         </div>
@@ -238,6 +355,12 @@
             <p style="margin: 12px 0; color: #666;">
                 Busca emails dos bancos e cria transações automaticamente.
             </p>
+            <div class="field">
+                <label class="label" for="sync-account-id">Conta</label>
+                <select id="sync-account-id" class="select">
+                    <option value="">Carregando contas...</option>
+                </select>
+            </div>
             <div id="sync-result"></div>
             <button class="btn btn-success" onclick="syncGmail()">
                 📧 Sincronizar Agora
@@ -256,6 +379,27 @@
 
     <script>
         const API_URL = '';
+
+        function getToken() {
+            const tokenInput = document.getElementById('token-input');
+            const token = (tokenInput && tokenInput.value || '').trim();
+            return token;
+        }
+
+        function getAuthHeaders() {
+            const token = getToken();
+            if (!token) return {};
+            return { 'Authorization': `Bearer ${token}` };
+        }
+
+        function persistToken() {
+            const token = getToken();
+            if (token) {
+                localStorage.setItem('access_token', token);
+            } else {
+                localStorage.removeItem('access_token');
+            }
+        }
         
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -276,14 +420,34 @@
         function clearError() {
             document.getElementById('error').innerHTML = '';
         }
+
+        function setStatus(message, type) {
+            const status = document.getElementById('status');
+            const kind = type || 'info';
+            status.innerHTML = `<div class="notice ${kind}">${message}</div>`;
+        }
+
+        function clearStatus() {
+            document.getElementById('status').innerHTML = '';
+        }
+
+        function setCurrentUser(email) {
+            const el = document.getElementById('current-user-email');
+            el.textContent = email || '-';
+        }
         
         async function fetchAccounts() {
             clearError();
             try {
-                const res = await fetch(API_URL + '/accounts/');
+                const res = await fetch(API_URL + '/accounts/', {
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
                 if (!res.ok) throw new Error('Erro ao carregar contas');
                 const accounts = await res.json();
                 renderAccounts(accounts);
+                updateSyncAccounts(accounts);
             } catch (e) {
                 showError(e.message);
             }
@@ -334,8 +498,16 @@
             clearError();
             try {
                 const [accountRes, transactionsRes] = await Promise.all([
-                    fetch(API_URL + `/accounts/${accountId}`),
-                    fetch(API_URL + `/transactions/?account_id=${accountId}`)
+                    fetch(API_URL + `/accounts/${accountId}`, {
+                        headers: {
+                            ...getAuthHeaders()
+                        }
+                    }),
+                    fetch(API_URL + `/transactions/?account_id=${accountId}`, {
+                        headers: {
+                            ...getAuthHeaders()
+                        }
+                    })
                 ]);
                 
                 const account = await accountRes.json();
@@ -370,7 +542,11 @@
         async function fetchTransactions() {
             clearError();
             try {
-                const res = await fetch(API_URL + '/transactions/');
+                const res = await fetch(API_URL + '/transactions/', {
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
                 if (!res.ok) throw new Error('Erro ao carregar transações');
                 const transactions = await res.json();
                 renderTransactions(transactions, 'transactions-list');
@@ -422,16 +598,170 @@
             const date = new Date(dateStr);
             return date.toLocaleDateString('pt-BR');
         }
+
+        function updateSyncAccounts(accounts) {
+            const select = document.getElementById('sync-account-id');
+            if (!select) return;
+
+            if (!accounts || accounts.length === 0) {
+                select.innerHTML = '<option value="">Sem contas</option>';
+                return;
+            }
+
+            const currentValue = select.value;
+            select.innerHTML = accounts.map(acc => {
+                const label = acc.nickname ? `${acc.bank_name} (${acc.nickname})` : acc.bank_name;
+                return `<option value="${acc.id}">${label}</option>`;
+            }).join('');
+
+            if (currentValue && accounts.some(acc => String(acc.id) === String(currentValue))) {
+                select.value = currentValue;
+            }
+        }
+
+        async function loginWithCredentials(email, password) {
+            const body = new URLSearchParams();
+            body.set('username', email);
+            body.set('password', password);
+
+            const res = await fetch(API_URL + '/auth/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: body.toString()
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Erro ao autenticar');
+            }
+
+            const data = await res.json();
+            document.getElementById('token-input').value = data.access_token || '';
+            persistToken();
+        }
+
+        async function fetchCurrentUser() {
+            const token = getToken();
+            if (!token) {
+                setCurrentUser('-');
+                return;
+            }
+
+            try {
+                const res = await fetch(API_URL + '/auth/me', {
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+
+                if (!res.ok) {
+                    setCurrentUser('-');
+                    return;
+                }
+
+                const data = await res.json();
+                setCurrentUser(data.email || '-');
+            } catch (e) {
+                setCurrentUser('-');
+            }
+        }
+
+        async function login() {
+            clearError();
+            clearStatus();
+            try {
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+
+                if (!email || !password) {
+                    showError('Informe email e senha');
+                    return;
+                }
+
+                await loginWithCredentials(email, password);
+                setStatus('Login realizado com sucesso.', 'success');
+                document.getElementById('login-password').value = '';
+                await fetchCurrentUser();
+                await fetchAccounts();
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function registerUser() {
+            clearError();
+            clearStatus();
+            try {
+                const email = document.getElementById('register-email').value.trim();
+                const password = document.getElementById('register-password').value;
+
+                if (!email || !password) {
+                    showError('Informe email e senha');
+                    return;
+                }
+
+                const res = await fetch(API_URL + '/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao criar usuario');
+                }
+
+                document.getElementById('register-password').value = '';
+                document.getElementById('login-email').value = email;
+                document.getElementById('login-password').value = password;
+
+                await login();
+                setStatus('Usuario criado e autenticado.', 'success');
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        function logout() {
+            clearError();
+            clearStatus();
+            document.getElementById('token-input').value = '';
+            persistToken();
+            setCurrentUser('-');
+            setStatus('Token removido.', 'info');
+            updateSyncAccounts([]);
+            document.getElementById('accounts-list').innerHTML = `
+                <div class="empty-state">
+                    <p>Informe o token para carregar contas</p>
+                </div>
+            `;
+        }
         
         async function syncGmail() {
             clearError();
+            clearStatus();
             document.getElementById('sync-result').innerHTML = 
                 '<div class="loading">Sincronizando...</div>';
             
             try {
-                const res = await fetch(API_URL + '/gmail/sync?account_id=1', {
+                const accountId = document.getElementById('sync-account-id').value;
+                if (!accountId) {
+                    throw new Error('Selecione uma conta para sincronizar');
+                }
+
+                const res = await fetch(API_URL + `/gmail/sync?account_id=${accountId}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    }
                 });
                 
                 if (!res.ok) {
@@ -462,8 +792,55 @@
                     '<div class="error">❌ ' + e.message + '</div>';
             }
         }
+
+        async function createAccount() {
+            clearError();
+            clearStatus();
+            try {
+                const bankName = document.getElementById('bank-name').value.trim();
+                const accountType = document.getElementById('account-type').value;
+                const nickname = document.getElementById('nickname').value.trim();
+
+                if (!bankName) {
+                    showError('Informe o nome do banco');
+                    return;
+                }
+
+                const res = await fetch(API_URL + '/accounts/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        bank_name: bankName,
+                        account_type: accountType,
+                        nickname: nickname || null
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao criar conta');
+                }
+
+                document.getElementById('bank-name').value = '';
+                document.getElementById('nickname').value = '';
+                setStatus('Conta criada com sucesso.', 'success');
+                await fetchAccounts();
+            } catch (e) {
+                showError(e.message);
+            }
+        }
         
         // Carregar dados iniciais
+        const savedToken = localStorage.getItem('access_token');
+        if (savedToken) {
+            document.getElementById('token-input').value = savedToken;
+        }
+        document.getElementById('token-input').addEventListener('input', persistToken);
+        document.getElementById('token-input').addEventListener('change', fetchCurrentUser);
+        fetchCurrentUser();
         fetchAccounts();
     </script>
 </body>

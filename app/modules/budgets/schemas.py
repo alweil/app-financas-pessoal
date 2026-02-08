@@ -2,11 +2,13 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.models import BudgetPeriod
+
 
 class BudgetCreate(BaseModel):
     category_id: int
     amount_limit: float
-    period: str
+    period: BudgetPeriod
     start_date: datetime | None = None
 
 
@@ -14,7 +16,7 @@ class BudgetRead(BaseModel):
     id: int
     category_id: int
     amount_limit: float
-    period: str
+    period: BudgetPeriod
     start_date: datetime | None = None
 
     class Config:

@@ -19,6 +19,18 @@ def create_category(db: Session, user_id: int, payload: CategoryCreate) -> Categ
     return category
 
 
+def list_categories(db: Session, user_id: int) -> list[Category]:
+    return db.query(Category).filter(Category.user_id == user_id).all()
+
+
+def get_category(db: Session, user_id: int, category_id: int) -> Category | None:
+    return (
+        db.query(Category)
+        .filter(Category.user_id == user_id, Category.id == category_id)
+        .first()
+    )
+
+
 def seed_default_categories(db: Session, user_id: int) -> list[Category]:
     created: list[Category] = []
     for item in DEFAULT_CATEGORIES:

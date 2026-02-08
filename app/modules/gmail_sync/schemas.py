@@ -28,11 +28,6 @@ class SyncResult(BaseModel):
     errors: List[str]
 
 
-class GmailAuthRequest(BaseModel):
-    """Request to initiate Gmail OAuth flow."""
-    user_id: int = 1
-
-
 class GmailAuthResponse(BaseModel):
     """Response with OAuth URL."""
     auth_url: str

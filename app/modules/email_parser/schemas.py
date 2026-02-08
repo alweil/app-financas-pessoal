@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.modules.transactions.schemas import PaymentMethod, TransactionType
+
 
 class RawEmailIngest(BaseModel):
     message_id: str
@@ -16,8 +18,8 @@ class ParsedTransaction(BaseModel):
     bank_source: str | None
     amount: float | None
     merchant: str | None
-    transaction_type: str | None
-    payment_method: str | None
+    transaction_type: TransactionType | None
+    payment_method: PaymentMethod | None
     card_last4: str | None = None
     installments_total: int | None = None
     installments_current: int | None = None
@@ -33,8 +35,8 @@ class TransactionDraft(BaseModel):
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
-    transaction_type: str | None = None
-    payment_method: str | None = None
+    transaction_type: TransactionType | None = None
+    payment_method: PaymentMethod | None = None
     card_last4: str | None = None
     installments_total: int | None = None
     installments_current: int | None = None
@@ -59,8 +61,8 @@ class TransactionCreated(BaseModel):
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
-    transaction_type: str | None = None
-    payment_method: str | None = None
+    transaction_type: TransactionType | None = None
+    payment_method: PaymentMethod | None = None
     card_last4: str | None = None
     installments_total: int | None = None
     installments_current: int | None = None

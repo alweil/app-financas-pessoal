@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models import User
+from app.modules.auth.router import get_current_user
 from app.modules.email_parser.parser import parse_email
 from app.modules.email_parser.schemas import (
     ParseAndCreateResponse,
@@ -18,9 +20,12 @@ router = APIRouter(prefix="/email", tags=["email_parser"])
 
 
 @router.post("/ingest")
-def ingest(payload: RawEmailIngest, db: Session = Depends(get_db)):
-    user_id = 1
-    return ingest_email(db, user_id=user_id, payload=payload)
+def ingest(
+    payload: RawEmailIngest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return ingest_email(db, user_id=current_user.id, payload=payload)
 
 
 @router.post("/parse", response_model=ParsedTransaction)
@@ -36,12 +41,15 @@ def parse_to_transaction(payload: ParseToTransactionRequest):
 
 
 @router.post("/parse-and-create", response_model=ParseAndCreateResponse)
-def parse_and_create(payload: ParseToTransactionRequest, db: Session = Depends(get_db)):
-    user_id = 1
+def parse_and_create(
+    payload: ParseToTransactionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     parsed = parse_email(payload.email)
     if not parsed.success:
         return ParseAndCreateResponse(parsed=parsed, transaction=None)
-    raw = ingest_email(db, user_id=user_id, payload=payload.email)
+    raw = ingest_email(db, user_id=current_user.id, payload=payload.email)
     create_payload = build_transaction_create(
         parsed,
         account_id=payload.account_id,
@@ -50,5 +58,8 @@ def parse_and_create(payload: ParseToTransactionRequest, db: Session = Depends(g
     )
     if not create_payload:
         return ParseAndCreateResponse(parsed=parsed, transaction=None)
-    transaction = create_transaction(db, create_payload)
+    try:
+        transaction = create_transaction(db, user_id=current_user.id, payload=create_payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     return ParseAndCreateResponse(parsed=parsed, transaction=transaction)

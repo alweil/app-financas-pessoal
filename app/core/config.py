@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     secret_key: str
+    access_token_expire_minutes: int = 60
     
     # Gmail OAuth settings (optional - can also use env vars directly)
     gmail_client_id: str = ""

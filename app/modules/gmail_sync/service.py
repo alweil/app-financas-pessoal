@@ -1,10 +1,11 @@
 """Gmail sync service for automatic email processing."""
 import base64
-import os
 import json
+import os
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
+import redis
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -12,6 +13,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+from app.models import RawEmail
 from app.modules.email_parser.parser import detect_bank, parse_email
 from app.modules.email_parser.schemas import RawEmailIngest
 from app.modules.email_parser.service import ingest_email, build_transaction_create
@@ -20,6 +23,9 @@ from app.modules.gmail_sync.schemas import GmailMessage, SyncResult, GmailSyncCo
 
 # OAuth 2.0 scopes for Gmail
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+OAUTH_STATE_PREFIX = "gmail:oauth_state:"
+CREDENTIALS_PREFIX = "gmail:creds:"
+OAUTH_STATE_TTL_SECONDS = 15 * 60
 
 
 def get_gmail_service(credentials_dict: Optional[Dict[str, Any]] = None):
@@ -48,6 +54,46 @@ def get_gmail_service(credentials_dict: Optional[Dict[str, Any]] = None):
     except Exception as e:
         print(f"Error building Gmail service: {e}")
         return None
+
+
+def get_redis_client() -> redis.Redis:
+    return redis.from_url(settings.redis_url, decode_responses=True)
+
+
+def save_oauth_state(state: str, user_id: int) -> None:
+    client = get_redis_client()
+    client.setex(f"{OAUTH_STATE_PREFIX}{state}", OAUTH_STATE_TTL_SECONDS, str(user_id))
+
+
+def get_oauth_user(state: str) -> Optional[int]:
+    client = get_redis_client()
+    value = client.get(f"{OAUTH_STATE_PREFIX}{state}")
+    if not value:
+        return None
+    return int(value)
+
+
+def delete_oauth_state(state: str) -> None:
+    client = get_redis_client()
+    client.delete(f"{OAUTH_STATE_PREFIX}{state}")
+
+
+def save_credentials(user_id: int, creds_dict: Dict[str, Any]) -> None:
+    client = get_redis_client()
+    client.set(f"{CREDENTIALS_PREFIX}{user_id}", json.dumps(creds_dict))
+
+
+def get_credentials(user_id: int) -> Optional[Dict[str, Any]]:
+    client = get_redis_client()
+    value = client.get(f"{CREDENTIALS_PREFIX}{user_id}")
+    if not value:
+        return None
+    return json.loads(value)
+
+
+def delete_credentials(user_id: int) -> None:
+    client = get_redis_client()
+    client.delete(f"{CREDENTIALS_PREFIX}{user_id}")
 
 
 def create_auth_flow(redirect_uri: Optional[str] = None) -> Flow:
@@ -240,6 +286,11 @@ def sync_gmail_emails(
             # Skip if not from a bank
             if not gmail_msg.bank_source:
                 continue
+
+            # Skip if already ingested
+            existing = db.query(RawEmail).filter(RawEmail.message_id == msg_id).first()
+            if existing:
+                continue
             
             # Create ingest payload
             ingest_payload = RawEmailIngest(
@@ -269,8 +320,11 @@ def sync_gmail_emails(
             )
             
             if create_payload:
-                create_transaction(db, create_payload)
-                transactions_created += 1
+                try:
+                    create_transaction(db, user_id=user_id, payload=create_payload)
+                    transactions_created += 1
+                except ValueError as exc:
+                    errors.append(str(exc))
                 
     except Exception as e:
         errors.append(str(e))
