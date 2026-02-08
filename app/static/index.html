@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessor Financeiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        
+        .badge {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge.success { background: #27ae60; }
+        .badge.warning { background: #f39c12; }
+        .badge.danger { background: #e74c3c; }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .value {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        .amount.income {
+            color: #27ae60;
+        }
+        
+        .transaction {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .merchant {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .date {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            color: #3498db;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+        }
+        
+        .account-card {
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .account-card:hover {
+            transform: translateX(4px);
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: #3498db;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>☕ Assessor Financeiro</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('accounts')">Contas</div>
+        <div class="tab" onclick="showTab('transactions')">Todas Transações</div>
+        <div class="tab" onclick="showTab('sync')">Sincronizar</div>
+    </div>
+    
+    <div id="error"></div>
+    
+    <!-- Contas -->
+    <div id="accounts-section" class="section active">
+        <div id="accounts-list">
+            <div class="loading">Carregando contas...</div>
+        </div>
+        <button class="btn" onclick="fetchAccounts()">🔄 Atualizar</button>
+    </div>
+    
+    <!-- Transações -->
+    <div id="transactions-section" class="section">
+        <div id="transactions-list">
+            <div class="loading">Carregando transações...</div>
+        </div>
+        <button class="btn" onclick="fetchTransactions()">🔄 Atualizar</button>
+    </div>
+    
+    <!-- Sincronizar -->
+    <div id="sync-section" class="section">
+        <div class="card">
+            <h3>Sincronizar com Gmail</h3>
+            <p style="margin: 12px 0; color: #666;">
+                Busca emails dos bancos e cria transações automaticamente.
+            </p>
+            <div id="sync-result"></div>
+            <button class="btn btn-success" onclick="syncGmail()">
+                📧 Sincronizar Agora
+            </button>
+        </div>
+    </div>
+    
+    <!-- Detalhes da Conta -->
+    <div id="account-detail-section" class="section">
+        <button class="back-btn" onclick="showTab('accounts')">
+            ← Voltar
+        </button>
+        <div id="account-detail"></div>
+        <div id="account-transactions"></div>
+    </div>
+
+    <script>
+        const API_URL = '';
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-section').classList.add('active');
+            
+            if (tabName === 'accounts') fetchAccounts();
+            if (tabName === 'transactions') fetchTransactions();
+        }
+        
+        function showError(msg) {
+            document.getElementById('error').innerHTML = 
+                '<div class="error">❌ ' + msg + '</div>';
+        }
+        
+        function clearError() {
+            document.getElementById('error').innerHTML = '';
+        }
+        
+        async function fetchAccounts() {
+            clearError();
+            try {
+                const res = await fetch(API_URL + '/accounts/');
+                if (!res.ok) throw new Error('Erro ao carregar contas');
+                const accounts = await res.json();
+                renderAccounts(accounts);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+        
+        function renderAccounts(accounts) {
+            if (accounts.length === 0) {
+                document.getElementById('accounts-list').innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhuma conta cadastrada</p>
+                        <p style="font-size: 14px; margin-top: 8px;">
+                            Use a API para criar uma conta primeiro
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            document.getElementById('accounts-list').innerHTML = accounts.map(acc => `
+                <div class="card account-card" onclick="showAccountDetail(${acc.id})">
+                    <div class="card-header">
+                        <span class="card-title">${acc.bank_name}</span>
+                        <span class="badge">${getAccountTypeLabel(acc.account_type)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Apelido</span>
+                        <span class="value">${acc.nickname || '-'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Último Saldo</span>
+                        <span class="value">${acc.last_balance ? 'R$ ' + acc.last_balance.toFixed(2) : '-'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getAccountTypeLabel(type) {
+            const labels = {
+                'checking': 'Conta Corrente',
+                'savings': 'Poupança',
+                'credit_card': 'Cartão Crédito',
+                'investment': 'Investimento'
+            };
+            return labels[type] || type;
+        }
+        
+        async function showAccountDetail(accountId) {
+            clearError();
+            try {
+                const [accountRes, transactionsRes] = await Promise.all([
+                    fetch(API_URL + `/accounts/${accountId}`),
+                    fetch(API_URL + `/transactions/?account_id=${accountId}`)
+                ]);
+                
+                const account = await accountRes.json();
+                const transactions = await transactionsRes.json();
+                
+                document.getElementById('account-detail').innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">${account.bank_name}</span>
+                            <span class="badge">${getAccountTypeLabel(account.account_type)}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Apelido</span>
+                            <span class="value">${account.nickname || '-'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Último Saldo</span>
+                            <span class="value">${account.last_balance ? 'R$ ' + account.last_balance.toFixed(2) : '-'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                renderTransactions(transactions, 'account-transactions');
+                
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById('account-detail-section').classList.add('active');
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+        
+        async function fetchTransactions() {
+            clearError();
+            try {
+                const res = await fetch(API_URL + '/transactions/');
+                if (!res.ok) throw new Error('Erro ao carregar transações');
+                const transactions = await res.json();
+                renderTransactions(transactions, 'transactions-list');
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+        
+        function renderTransactions(transactions, elementId) {
+            if (transactions.length === 0) {
+                document.getElementById(elementId).innerHTML = `
+                    <div class="empty-state">
+                        <p>Nenhuma transação encontrada</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            
+            document.getElementById(elementId).innerHTML = `
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="info-row" style="border-bottom: none;">
+                        <span class="label">Total em Transações</span>
+                        <span class="amount">R$ ${total.toFixed(2)}</span>
+                    </div>
+                </div>
+                ${transactions.map(t => `
+                    <div class="transaction">
+                        <div class="transaction-header">
+                            <div>
+                                <div class="merchant">${t.merchant || t.description || 'Transação'}</div>
+                                <div class="date">${formatDate(t.transaction_date)}</div>
+                            </div>
+                            <span class="amount">R$ ${(t.amount || 0).toFixed(2)}</span>
+                        </div>
+                        ${t.installments_total ? `
+                            <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                                Parcela ${t.installments_current}/${t.installments_total}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR');
+        }
+        
+        async function syncGmail() {
+            clearError();
+            document.getElementById('sync-result').innerHTML = 
+                '<div class="loading">Sincronizando...</div>';
+            
+            try {
+                const res = await fetch(API_URL + '/gmail/sync?account_id=1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Erro ao sincronizar');
+                }
+                
+                const result = await res.json();
+                
+                document.getElementById('sync-result').innerHTML = `
+                    <div class="card" style="background: #e8f5e9; border: 1px solid #4caf50;">
+                        <div class="info-row">
+                            <span class="label">Emails Encontrados</span>
+                            <span class="value">${result.messages_found}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Emails Parseados</span>
+                            <span class="value">${result.messages_parsed}</span>
+                        </div>
+                        <div class="info-row" style="border-bottom: none;">
+                            <span class="label">Transações Criadas</span>
+                            <span class="value" style="color: #27ae60; font-weight: 700;">${result.transactions_created}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('sync-result').innerHTML = 
+                    '<div class="error">❌ ' + e.message + '</div>';
+            }
+        }
+        
+        // Carregar dados iniciais
+        fetchAccounts();
+    </script>
+</body>
+</html>

@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.modules.accounts.router import router as accounts_router
@@ -12,6 +14,7 @@ from app.modules.gmail_sync.router import router as gmail_sync_router
 
 app = FastAPI(title=settings.app_name)
 
+# Include API routers
 app.include_router(accounts_router)
 app.include_router(categories_router)
 app.include_router(transactions_router)
@@ -20,6 +23,14 @@ app.include_router(email_parser_router)
 app.include_router(ai_agent_router)
 app.include_router(notifications_router)
 app.include_router(gmail_sync_router)
+
+# Serve static files
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+@app.get("/")
+def root():
+    return FileResponse("app/static/index.html")
 
 
 @app.get("/health")
