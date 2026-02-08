@@ -17,3 +17,9 @@ class AccountRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AccountUpdate(BaseModel):
+    bank_name: str | None = None
+    account_type: AccountType | None = None
+    nickname: str | None = None

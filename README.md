@@ -104,6 +104,16 @@ Payload:
 	"nickname": "string|null"
 }
 
+PUT /accounts/{account_id}
+Payload:
+{
+	"bank_name": "string|null",
+	"account_type": "checking|savings|credit_card|investment|null",
+	"nickname": "string|null"
+}
+
+DELETE /accounts/{account_id}
+
 ### Categorias
 POST /categories
 Payload:
@@ -132,6 +142,26 @@ Payload:
 	"raw_email_id": 100
 }
 
+GET /transactions?account_id=1&start_date=2026-02-01T00:00:00Z&end_date=2026-02-08T23:59:59Z&category_id=10
+
+PUT /transactions/{transaction_id}
+Payload:
+{
+	"account_id": 1,
+	"amount": 10.5,
+	"merchant": "string|null",
+	"description": "string|null",
+	"transaction_date": "2026-02-04T10:00:00Z",
+	"transaction_type": "purchase|pix_in|pix_out|unknown|null",
+	"payment_method": "credit_card|debit_card|pix|boleto|null",
+	"card_last4": "1234|null",
+	"installments_total": 5,
+	"installments_current": 2,
+	"category_id": 10
+}
+
+DELETE /transactions/{transaction_id}
+
 ### Orçamentos
 POST /budgets
 Payload:
@@ -152,7 +182,8 @@ Passos:
 4. O email do usuario logado aparece no bloco Autenticacao.
 5. Use o botao Limpar Token para sair.
 6. Crie contas no bloco Nova Conta.
-7. Na aba Sincronizar, selecione a conta desejada antes de iniciar a sync.
+7. Na aba Transacoes, crie, edite, exclua e filtre transacoes.
+8. Na aba Sincronizar, selecione a conta desejada antes de iniciar a sync.
 
 ## Seeds de categorias
 O arquivo de seeds está em app/seeds/categories.py. A função seed_default_categories está em app/modules/categories/service.py.

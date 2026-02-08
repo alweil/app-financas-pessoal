@@ -206,6 +206,16 @@
         .btn-secondary {
             background: #7f8c8d;
         }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            width: auto;
+        }
         
         .account-card {
             border-left: 4px solid #3498db;
@@ -247,6 +257,12 @@
         .helper {
             font-size: 12px;
             color: #7f8c8d;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -342,6 +358,82 @@
     
     <!-- Transações -->
     <div id="transactions-section" class="section">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">Filtros</span>
+            </div>
+            <div class="field">
+                <label class="label" for="transactions-filter-account-id">Conta</label>
+                <select id="transactions-filter-account-id" class="select">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="transactions-filter-start">Data inicial</label>
+                <input id="transactions-filter-start" class="input" type="date" />
+            </div>
+            <div class="field">
+                <label class="label" for="transactions-filter-end">Data final</label>
+                <input id="transactions-filter-end" class="input" type="date" />
+            </div>
+            <div class="actions-row">
+                <button class="btn btn-small btn-success" onclick="applyTransactionFilters()">Aplicar</button>
+                <button class="btn btn-small btn-secondary" onclick="clearTransactionFilters()">Limpar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title" id="transaction-form-title">Nova Transacao</span>
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-account-id">Conta</label>
+                <select id="transaction-account-id" class="select">
+                    <option value="">Selecione</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-amount">Valor</label>
+                <input id="transaction-amount" class="input" type="number" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-merchant">Estabelecimento</label>
+                <input id="transaction-merchant" class="input" type="text" placeholder="Ex: Mercado" />
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-description">Descricao</label>
+                <input id="transaction-description" class="input" type="text" placeholder="Opcional" />
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-date">Data</label>
+                <input id="transaction-date" class="input" type="datetime-local" />
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-type">Tipo</label>
+                <select id="transaction-type" class="select">
+                    <option value="">Selecione</option>
+                    <option value="purchase">Compra</option>
+                    <option value="pix_in">Pix Entrada</option>
+                    <option value="pix_out">Pix Saida</option>
+                    <option value="unknown">Desconhecido</option>
+                </select>
+            </div>
+            <div class="field">
+                <label class="label" for="transaction-method">Pagamento</label>
+                <select id="transaction-method" class="select">
+                    <option value="">Selecione</option>
+                    <option value="credit_card">Cartao Credito</option>
+                    <option value="debit_card">Cartao Debito</option>
+                    <option value="pix">Pix</option>
+                    <option value="boleto">Boleto</option>
+                </select>
+            </div>
+            <div class="actions-row">
+                <button class="btn btn-small btn-success" onclick="saveTransaction()">Salvar</button>
+                <button class="btn btn-small btn-secondary" onclick="cancelTransactionEdit()">Cancelar</button>
+            </div>
+        </div>
+
         <div id="transactions-list">
             <div class="loading">Carregando transações...</div>
         </div>
@@ -379,6 +471,12 @@
 
     <script>
         const API_URL = '';
+        const state = {
+            accounts: [],
+            transactions: [],
+            editingTransactionId: null,
+            editingAccountId: null
+        };
 
         function getToken() {
             const tokenInput = document.getElementById('token-input');
@@ -446,8 +544,10 @@
                 });
                 if (!res.ok) throw new Error('Erro ao carregar contas');
                 const accounts = await res.json();
+                state.accounts = accounts;
                 renderAccounts(accounts);
                 updateSyncAccounts(accounts);
+                updateTransactionAccountOptions(accounts);
             } catch (e) {
                 showError(e.message);
             }
@@ -459,7 +559,7 @@
                     <div class="empty-state">
                         <p>Nenhuma conta cadastrada</p>
                         <p style="font-size: 14px; margin-top: 8px;">
-                            Use a API para criar uma conta primeiro
+                            Use o formulario acima para criar sua primeira conta
                         </p>
                     </div>
                 `;
@@ -512,6 +612,7 @@
                 
                 const account = await accountRes.json();
                 const transactions = await transactionsRes.json();
+                state.editingAccountId = account.id;
                 
                 document.getElementById('account-detail').innerHTML = `
                     <div class="card">
@@ -528,6 +629,32 @@
                             <span class="value">${account.last_balance ? 'R$ ' + account.last_balance.toFixed(2) : '-'}</span>
                         </div>
                     </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Editar Conta</span>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="account-edit-bank-name">Banco</label>
+                            <input id="account-edit-bank-name" class="input" type="text" value="${account.bank_name}" />
+                        </div>
+                        <div class="field">
+                            <label class="label" for="account-edit-type">Tipo</label>
+                            <select id="account-edit-type" class="select">
+                                <option value="checking" ${account.account_type === 'checking' ? 'selected' : ''}>Conta Corrente</option>
+                                <option value="savings" ${account.account_type === 'savings' ? 'selected' : ''}>Poupanca</option>
+                                <option value="credit_card" ${account.account_type === 'credit_card' ? 'selected' : ''}>Cartao Credito</option>
+                                <option value="investment" ${account.account_type === 'investment' ? 'selected' : ''}>Investimento</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label class="label" for="account-edit-nickname">Apelido</label>
+                            <input id="account-edit-nickname" class="input" type="text" value="${account.nickname || ''}" />
+                        </div>
+                        <div class="actions-row">
+                            <button class="btn btn-small btn-success" onclick="saveAccount()">Salvar</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteAccount()">Excluir</button>
+                        </div>
+                    </div>
                 `;
                 
                 renderTransactions(transactions, 'account-transactions');
@@ -542,7 +669,20 @@
         async function fetchTransactions() {
             clearError();
             try {
-                const res = await fetch(API_URL + '/transactions/', {
+                const params = new URLSearchParams();
+                const accountId = document.getElementById('transactions-filter-account-id').value;
+                const startDate = document.getElementById('transactions-filter-start').value;
+                const endDate = document.getElementById('transactions-filter-end').value;
+
+                if (accountId) params.set('account_id', accountId);
+                if (startDate) params.set('start_date', new Date(startDate).toISOString());
+                if (endDate) params.set('end_date', new Date(endDate).toISOString());
+
+                const url = params.toString()
+                    ? `${API_URL}/transactions/?${params.toString()}`
+                    : API_URL + '/transactions/';
+
+                const res = await fetch(url, {
                     headers: {
                         ...getAuthHeaders()
                     }
@@ -557,6 +697,7 @@
         
         function renderTransactions(transactions, elementId) {
             if (transactions.length === 0) {
+                state.transactions = [];
                 document.getElementById(elementId).innerHTML = `
                     <div class="empty-state">
                         <p>Nenhuma transação encontrada</p>
@@ -564,6 +705,8 @@
                 `;
                 return;
             }
+
+            state.transactions = transactions;
             
             const total = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
             
@@ -582,6 +725,10 @@
                                 <div class="date">${formatDate(t.transaction_date)}</div>
                             </div>
                             <span class="amount">R$ ${(t.amount || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="actions-row" style="margin-top: 8px;">
+                            <button class="btn btn-small btn-secondary" onclick="startTransactionEdit(${t.id})">Editar</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteTransaction(${t.id})">Excluir</button>
                         </div>
                         ${t.installments_total ? `
                             <div style="margin-top: 8px; font-size: 12px; color: #666;">
@@ -617,6 +764,31 @@
             if (currentValue && accounts.some(acc => String(acc.id) === String(currentValue))) {
                 select.value = currentValue;
             }
+        }
+
+        function updateTransactionAccountOptions(accounts) {
+            const selects = [
+                document.getElementById('transaction-account-id'),
+                document.getElementById('transactions-filter-account-id')
+            ];
+
+            selects.forEach((select, index) => {
+                if (!select) return;
+
+                const currentValue = select.value;
+                const options = [index === 1 ? '<option value="">Todas</option>' : '<option value="">Selecione</option>'];
+
+                accounts.forEach(acc => {
+                    const label = acc.nickname ? `${acc.bank_name} (${acc.nickname})` : acc.bank_name;
+                    options.push(`<option value="${acc.id}">${label}</option>`);
+                });
+
+                select.innerHTML = options.join('');
+
+                if (currentValue && accounts.some(acc => String(acc.id) === String(currentValue))) {
+                    select.value = currentValue;
+                }
+            });
         }
 
         async function loginWithCredentials(email, password) {
@@ -736,7 +908,9 @@
             persistToken();
             setCurrentUser('-');
             setStatus('Token removido.', 'info');
+            state.accounts = [];
             updateSyncAccounts([]);
+            updateTransactionAccountOptions([]);
             document.getElementById('accounts-list').innerHTML = `
                 <div class="empty-state">
                     <p>Informe o token para carregar contas</p>
@@ -828,6 +1002,213 @@
                 document.getElementById('nickname').value = '';
                 setStatus('Conta criada com sucesso.', 'success');
                 await fetchAccounts();
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function saveAccount() {
+            clearError();
+            clearStatus();
+            if (!state.editingAccountId) {
+                showError('Nenhuma conta selecionada');
+                return;
+            }
+
+            try {
+                const bankName = document.getElementById('account-edit-bank-name').value.trim();
+                const accountType = document.getElementById('account-edit-type').value;
+                const nickname = document.getElementById('account-edit-nickname').value.trim();
+
+                const res = await fetch(API_URL + `/accounts/${state.editingAccountId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify({
+                        bank_name: bankName,
+                        account_type: accountType,
+                        nickname: nickname || null
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao atualizar conta');
+                }
+
+                setStatus('Conta atualizada.', 'success');
+                await fetchAccounts();
+                await showAccountDetail(state.editingAccountId);
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function deleteAccount() {
+            clearError();
+            clearStatus();
+            if (!state.editingAccountId) {
+                showError('Nenhuma conta selecionada');
+                return;
+            }
+
+            const confirmed = confirm('Excluir esta conta? Esta acao nao pode ser desfeita.');
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(API_URL + `/accounts/${state.editingAccountId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao excluir conta');
+                }
+
+                setStatus('Conta excluida.', 'success');
+                state.editingAccountId = null;
+                showTab('accounts');
+                await fetchAccounts();
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        function applyTransactionFilters() {
+            fetchTransactions();
+        }
+
+        function clearTransactionFilters() {
+            document.getElementById('transactions-filter-account-id').value = '';
+            document.getElementById('transactions-filter-start').value = '';
+            document.getElementById('transactions-filter-end').value = '';
+            fetchTransactions();
+        }
+
+        function fillTransactionForm(transaction) {
+            document.getElementById('transaction-account-id').value = transaction.account_id || '';
+            document.getElementById('transaction-amount').value = transaction.amount || '';
+            document.getElementById('transaction-merchant').value = transaction.merchant || '';
+            document.getElementById('transaction-description').value = transaction.description || '';
+            document.getElementById('transaction-date').value = transaction.transaction_date
+                ? new Date(transaction.transaction_date).toISOString().slice(0, 16)
+                : '';
+            document.getElementById('transaction-type').value = transaction.transaction_type || '';
+            document.getElementById('transaction-method').value = transaction.payment_method || '';
+        }
+
+        function resetTransactionForm() {
+            document.getElementById('transaction-account-id').value = '';
+            document.getElementById('transaction-amount').value = '';
+            document.getElementById('transaction-merchant').value = '';
+            document.getElementById('transaction-description').value = '';
+            document.getElementById('transaction-date').value = '';
+            document.getElementById('transaction-type').value = '';
+            document.getElementById('transaction-method').value = '';
+        }
+
+        function startTransactionEdit(transactionId) {
+            const transaction = state.transactions.find(item => item.id === transactionId);
+            if (!transaction) {
+                showError('Transacao nao encontrada');
+                return;
+            }
+
+            state.editingTransactionId = transaction.id;
+            document.getElementById('transaction-form-title').textContent = 'Editar Transacao';
+            fillTransactionForm(transaction);
+            setStatus('Edicao de transacao ativa.', 'info');
+        }
+
+        function cancelTransactionEdit() {
+            state.editingTransactionId = null;
+            document.getElementById('transaction-form-title').textContent = 'Nova Transacao';
+            resetTransactionForm();
+            setStatus('Edicao cancelada.', 'info');
+        }
+
+        async function saveTransaction() {
+            clearError();
+            clearStatus();
+
+            try {
+                const accountId = document.getElementById('transaction-account-id').value;
+                const amount = document.getElementById('transaction-amount').value;
+
+                if (!accountId || !amount) {
+                    showError('Informe conta e valor');
+                    return;
+                }
+
+                const payload = {
+                    account_id: Number(accountId),
+                    amount: Number(amount),
+                    merchant: document.getElementById('transaction-merchant').value.trim() || null,
+                    description: document.getElementById('transaction-description').value.trim() || null,
+                    transaction_date: document.getElementById('transaction-date').value
+                        ? new Date(document.getElementById('transaction-date').value).toISOString()
+                        : null,
+                    transaction_type: document.getElementById('transaction-type').value || null,
+                    payment_method: document.getElementById('transaction-method').value || null
+                };
+
+                const isEdit = Boolean(state.editingTransactionId);
+                const url = isEdit
+                    ? `${API_URL}/transactions/${state.editingTransactionId}`
+                    : `${API_URL}/transactions/`;
+                const method = isEdit ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...getAuthHeaders()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao salvar transacao');
+                }
+
+                setStatus(isEdit ? 'Transacao atualizada.' : 'Transacao criada.', 'success');
+                cancelTransactionEdit();
+                await fetchTransactions();
+            } catch (e) {
+                showError(e.message);
+            }
+        }
+
+        async function deleteTransaction(transactionId) {
+            clearError();
+            clearStatus();
+            const confirmed = confirm('Excluir esta transacao?');
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch(API_URL + `/transactions/${transactionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Erro ao excluir transacao');
+                }
+
+                setStatus('Transacao excluida.', 'success');
+                if (state.editingTransactionId === transactionId) {
+                    cancelTransactionEdit();
+                }
+                await fetchTransactions();
             } catch (e) {
                 showError(e.message);
             }
