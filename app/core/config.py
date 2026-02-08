@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     secret_key: str
+    
+    # Gmail OAuth settings (optional - can also use env vars directly)
+    gmail_client_id: str = ""
+    gmail_client_secret: str = ""
+    gmail_project_id: str = ""
+    gmail_redirect_uri: str = "https://web-production-6437a.up.railway.app/api/v1/gmail/callback"
 
     class Config:
         env_file = ".env"
