@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 import enum
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,8 +41,8 @@ class Account(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     bank_name: Mapped[str] = mapped_column(String(80), nullable=False)
     account_type: Mapped[AccountType] = mapped_column(Enum(AccountType), nullable=False)
-    nickname: Mapped[str | None] = mapped_column(String(120))
-    last_balance: Mapped[float | None] = mapped_column(Float)
+    nickname: Mapped[Optional[str]] = mapped_column(String(120))
+    last_balance: Mapped[Optional[float]] = mapped_column(Float)
 
     user: Mapped["User"] = relationship(back_populates="accounts")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="account")
@@ -53,14 +52,14 @@ class Category(Base):
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    user_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str] = mapped_column(String(120), nullable=False)
-    icon: Mapped[str | None] = mapped_column(String(40))
-    color: Mapped[str | None] = mapped_column(String(20))
-    parent_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"))
+    icon: Mapped[Optional[str]] = mapped_column(String(40))
+    color: Mapped[Optional[str]] = mapped_column(String(20))
+    parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("categories.id"))
 
-    user: Mapped["User" | None] = relationship(back_populates="categories")
-    parent: Mapped["Category" | None] = relationship(remote_side="Category.id")
+    user: Mapped[Optional["User"]] = relationship(back_populates="categories")
+    parent: Mapped[Optional["Category"]] = relationship(remote_side="Category.id")
     budgets: Mapped[list["Budget"]] = relationship(back_populates="category")
 
 
@@ -71,11 +70,11 @@ class RawEmail(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     message_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     from_address: Mapped[str] = mapped_column(String(255), nullable=False)
-    subject: Mapped[str | None] = mapped_column(String(255))
+    subject: Mapped[Optional[str]] = mapped_column(String(255))
     body: Mapped[str] = mapped_column(String)
     received_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     processed: Mapped[bool] = mapped_column(Boolean, default=False)
-    bank_source: Mapped[str | None] = mapped_column(String(80))
+    bank_source: Mapped[Optional[str]] = mapped_column(String(80))
 
 
 class Transaction(Base):
@@ -84,16 +83,16 @@ class Transaction(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
-    merchant: Mapped[str | None] = mapped_column(String(255))
-    description: Mapped[str | None] = mapped_column(String(255))
+    merchant: Mapped[Optional[str]] = mapped_column(String(255))
+    description: Mapped[Optional[str]] = mapped_column(String(255))
     transaction_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    transaction_type: Mapped[str | None] = mapped_column(String(40))
-    payment_method: Mapped[str | None] = mapped_column(String(40))
-    card_last4: Mapped[str | None] = mapped_column(String(4))
-    installments_total: Mapped[int | None] = mapped_column(Integer)
-    installments_current: Mapped[int | None] = mapped_column(Integer)
-    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"))
-    raw_email_id: Mapped[int | None] = mapped_column(ForeignKey("raw_emails.id"))
+    transaction_type: Mapped[Optional[str]] = mapped_column(String(40))
+    payment_method: Mapped[Optional[str]] = mapped_column(String(40))
+    card_last4: Mapped[Optional[str]] = mapped_column(String(4))
+    installments_total: Mapped[Optional[int]] = mapped_column(Integer)
+    installments_current: Mapped[Optional[int]] = mapped_column(Integer)
+    category_id: Mapped[Optional[int]] = mapped_column(ForeignKey("categories.id"))
+    raw_email_id: Mapped[Optional[int]] = mapped_column(ForeignKey("raw_emails.id"))
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
 
     account: Mapped["Account"] = relationship(back_populates="transactions")
