@@ -1,32 +1,28 @@
 """Gmail sync router for API endpoints."""
-from typing import Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.gmail_sync.schemas import (
-    GmailAuthRequest,
-    GmailAuthResponse,
-    GmailAuthCallback,
-    GmailSyncConfig,
-    SyncResult
-)
+from app.models import User
+from app.modules.auth.router import get_current_user
+from app.modules.gmail_sync.schemas import GmailAuthResponse, GmailSyncConfig, SyncResult
 from app.modules.gmail_sync.service import (
     create_auth_flow,
+    delete_credentials,
+    delete_oauth_state,
+    get_credentials,
     get_auth_url,
+    get_oauth_user,
+    save_credentials,
+    save_oauth_state,
     sync_gmail_emails
 )
 
 router = APIRouter(prefix="/gmail", tags=["gmail_sync"])
 
-# Temporary storage for OAuth states (use Redis in production)
-oauth_states: Dict[str, int] = {}
-# Temporary storage for credentials (use database in production)
-stored_credentials: Dict[int, Dict[str, Any]] = {}
-
 
 @router.post("/auth/init", response_model=GmailAuthResponse)
-def init_auth(request: GmailAuthRequest):
+def init_auth(current_user: User = Depends(get_current_user)):
     """Initialize Gmail OAuth flow.
     
     Returns authorization URL for user to complete OAuth.
@@ -34,7 +30,7 @@ def init_auth(request: GmailAuthRequest):
     try:
         flow = create_auth_flow()
         auth_url, state = get_auth_url(flow)
-        oauth_states[state] = request.user_id
+        save_oauth_state(state, current_user.id)
         return GmailAuthResponse(auth_url=auth_url, state=state)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create auth flow: {str(e)}")
@@ -50,10 +46,9 @@ def oauth_callback(
     
     This endpoint receives the authorization code and exchanges it for tokens.
     """
-    if state not in oauth_states:
+    user_id = get_oauth_user(state)
+    if not user_id:
         raise HTTPException(status_code=400, detail="Invalid state parameter")
-    
-    user_id = oauth_states[state]
     
     try:
         flow = create_auth_flow()
@@ -69,7 +64,8 @@ def oauth_callback(
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
         }
-        stored_credentials[user_id] = creds_dict
+        save_credentials(user_id, creds_dict)
+        delete_oauth_state(state)
         
         return {
             "status": "success",
@@ -85,7 +81,7 @@ def sync_emails(
     account_id: int,
     config: GmailSyncConfig = Depends(),
     db: Session = Depends(get_db),
-    user_id: int = 1
+    current_user: User = Depends(get_current_user),
 ):
     """Sync emails from Gmail and create transactions.
     
@@ -97,38 +93,36 @@ def sync_emails(
     Returns:
         SyncResult with statistics
     """
-    if user_id not in stored_credentials:
+    credentials = get_credentials(current_user.id)
+    if not credentials:
         raise HTTPException(
             status_code=401,
             detail="Gmail not authenticated. Call /auth/init first."
         )
-    
-    credentials = stored_credentials[user_id]
     
     result = sync_gmail_emails(
         db=db,
         credentials_dict=credentials,
         account_id=account_id,
         config=config,
-        user_id=user_id
+        user_id=current_user.id
     )
     
     return result
 
 
 @router.get("/status")
-def get_status(user_id: int = 1):
+def get_status(current_user: User = Depends(get_current_user)):
     """Check Gmail authentication status."""
-    is_authenticated = user_id in stored_credentials
+    is_authenticated = bool(get_credentials(current_user.id))
     return {
         "authenticated": is_authenticated,
-        "user_id": user_id
+        "user_id": current_user.id
     }
 
 
 @router.post("/disconnect")
-def disconnect(user_id: int = 1):
+def disconnect(current_user: User = Depends(get_current_user)):
     """Disconnect Gmail (remove stored credentials)."""
-    if user_id in stored_credentials:
-        del stored_credentials[user_id]
+    delete_credentials(current_user.id)
     return {"status": "success", "message": "Gmail disconnected"}

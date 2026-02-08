@@ -11,6 +11,7 @@ from app.modules.email_parser.router import router as email_parser_router
 from app.modules.ai_agent.router import router as ai_agent_router
 from app.modules.notifications.router import router as notifications_router
 from app.modules.gmail_sync.router import router as gmail_sync_router
+from app.modules.auth.router import router as auth_router
 
 app = FastAPI(title=settings.app_name)
 
@@ -23,6 +24,7 @@ app.include_router(email_parser_router)
 app.include_router(ai_agent_router)
 app.include_router(notifications_router)
 app.include_router(gmail_sync_router)
+app.include_router(auth_router)
 
 # Serve static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

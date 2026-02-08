@@ -1,6 +1,10 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
+
+TransactionType = Literal["purchase", "pix_in", "pix_out", "unknown"]
+PaymentMethod = Literal["credit_card", "debit_card", "pix", "boleto"]
 
 
 class TransactionCreate(BaseModel):
@@ -9,8 +13,8 @@ class TransactionCreate(BaseModel):
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
-    transaction_type: str | None = None
-    payment_method: str | None = None
+    transaction_type: TransactionType | None = None
+    payment_method: PaymentMethod | None = None
     card_last4: str | None = None
     installments_total: int | None = None
     installments_current: int | None = None
@@ -25,8 +29,8 @@ class TransactionRead(BaseModel):
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
-    transaction_type: str | None = None
-    payment_method: str | None = None
+    transaction_type: TransactionType | None = None
+    payment_method: PaymentMethod | None = None
     card_last4: str | None = None
     installments_total: int | None = None
     installments_current: int | None = None

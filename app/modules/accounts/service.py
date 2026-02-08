@@ -15,3 +15,15 @@ def create_account(db: Session, user_id: int, payload: AccountCreate) -> Account
     db.commit()
     db.refresh(account)
     return account
+
+
+def list_accounts(db: Session, user_id: int) -> list[Account]:
+    return db.query(Account).filter(Account.user_id == user_id).all()
+
+
+def get_account(db: Session, user_id: int, account_id: int) -> Account | None:
+    return (
+        db.query(Account)
+        .filter(Account.user_id == user_id, Account.id == account_id)
+        .first()
+    )

@@ -69,12 +69,12 @@ def detect_bank(from_address: str, subject: str | None) -> str | None:
 
 
 def parse_nubank_purchase(body: str) -> ParsedTransaction | None:
-    pattern = r"Compra (?:de|no) R\$\s*([\d\.]+,\d{2}) aprovada em (.+)"
+    pattern = r"Compra (?:de|no) R\$\s*([\d\.]+,\d{2}) aprovada em (.+?)(?: em \d{2}/\d{2}/\d{4}|\s+-\s+|$)"
     match = re.search(pattern, body, re.IGNORECASE)
     if not match:
         return None
     amount = parse_amount(match.group(1))
-    merchant = match.group(2).strip()
+    merchant = clean_merchant(match.group(2))
     date = parse_date(body)
     payment_method = detect_payment_method(body, default="credit_card")
     installments_current, installments_total = parse_installments(body)
@@ -124,15 +124,15 @@ def parse_nubank_pix(body: str) -> ParsedTransaction | None:
 
 
 def parse_itau_purchase(body: str) -> ParsedTransaction | None:
-    pattern = r"Compra aprovada:\s*R\$\s*([\d\.]+,\d{2})\s*-\s*(.+)"
+    pattern = r"Compra aprovada:\s*R\$\s*([\d\.]+,\d{2})\s*-\s*(.+?)(?:\s+no\s+|\s+na\s+|\s+Cart[aã]o|$)"
     match = re.search(pattern, body, re.IGNORECASE)
     if not match:
-        pattern = r"Compra com cartão\s*R\$\s*([\d\.]+,\d{2})\s*-\s*(.+)"
+        pattern = r"Compra com cartão\s*R\$\s*([\d\.]+,\d{2})\s*-\s*(.+?)(?:\s+no\s+|\s+na\s+|\s+Cart[aã]o|$)"
         match = re.search(pattern, body, re.IGNORECASE)
     if not match:
         return None
     amount = parse_amount(match.group(1))
-    merchant = match.group(2).strip()
+    merchant = clean_merchant(match.group(2))
     date = parse_date(body)
     payment_method = detect_payment_method(body, default="credit_card")
     installments_current, installments_total = parse_installments(body)
@@ -184,7 +184,7 @@ def parse_bradesco_purchase(body: str) -> ParsedTransaction | None:
     if not amount_match or not merchant_match:
         return None
     amount = parse_amount(amount_match.group(1))
-    merchant = merchant_match.group(1).strip()
+    merchant = clean_merchant(merchant_match.group(1))
     date = parse_date(body)
     payment_method = detect_payment_method(body, default="credit_card")
     installments_current, installments_total = parse_installments(body)
@@ -212,7 +212,7 @@ def parse_inter_purchase(body: str) -> ParsedTransaction | None:
     if not match:
         return None
     amount = parse_amount(match.group(1))
-    merchant = match.group(2).strip()
+    merchant = clean_merchant(match.group(2))
     date = parse_date(body)
     payment_method = detect_payment_method(body, default="credit_card")
     installments_current, installments_total = parse_installments(body)
@@ -235,12 +235,12 @@ def parse_inter_purchase(body: str) -> ParsedTransaction | None:
 
 
 def parse_btg_purchase(body: str) -> ParsedTransaction | None:
-    pattern = r"Compra (?:aprovada|realizada):?\s*R\$\s*([\d\.]+,\d{2})\s*(?:em|no)\s*(.+)"
+    pattern = r"Compra (?:aprovada|realizada):?\s*R\$\s*([\d\.]+,\d{2})\s*(?:em|no)\s*(.+?)(?:\s+-\s+Cart[aã]o|\s+-\s+|$)"
     match = re.search(pattern, body, re.IGNORECASE)
     if not match:
         return None
     amount = parse_amount(match.group(1))
-    merchant = match.group(2).strip()
+    merchant = clean_merchant(match.group(2))
     date = parse_date(body)
     payment_method = detect_payment_method(body, default="credit_card")
     installments_current, installments_total = parse_installments(body)
@@ -342,3 +342,14 @@ def detect_card_last4(text: str) -> str | None:
         if match:
             return match.group(1)
     return None
+
+
+def clean_merchant(value: str) -> str:
+    cleaned = value.strip()
+    cleaned = re.sub(r"\s+-\s+cart[aã]o.*$", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+cart[aã]o.*$", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+no\s+.*$", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+na\s+.*$", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+em\s+\d{2}/\d{2}/\d{4}.*$", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+-\s+.*$", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()

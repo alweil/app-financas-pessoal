@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -13,7 +13,7 @@ def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
         category_id=payload.category_id,
         amount_limit=payload.amount_limit,
         period=BudgetPeriod(payload.period),
-        start_date=payload.start_date or datetime.utcnow(),
+        start_date=payload.start_date or datetime.now(UTC),
     )
     db.add(budget)
     db.commit()
@@ -60,7 +60,7 @@ def get_budget_summary(
 
 
 def _resolve_period_window(start_date: datetime, period: BudgetPeriod) -> tuple[datetime, datetime]:
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
     if period == BudgetPeriod.weekly:
         return _rolling_window(start_date, now, days=7)
     if period == BudgetPeriod.monthly:

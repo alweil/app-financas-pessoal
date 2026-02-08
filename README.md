@@ -1,6 +1,9 @@
 # Assessor Financeiro (Backend)
 
 Backend modular monolítico para registrar contas, transações, categorias (com subcategorias), orçamentos e ingestão de notificações por email.
+Roda em produção no Railway com Postgres e Redis.
+
+Inclui um frontend simples servido em / via FastAPI, com arquivos em app/static.
 
 ## Pré-requisitos
 - Python 3.11+
@@ -36,6 +39,23 @@ Endpoints que funcionam sem banco:
 - SECRET_KEY
 
 ## Endpoints
+
+### Autenticacao
+POST /auth/register
+Payload:
+{
+	"email": "user@example.com",
+	"password": "secret"
+}
+
+POST /auth/token
+Form data:
+- username
+- password
+
+GET /auth/me
+Headers:
+- Authorization: Bearer <token>
 
 ### Saúde
 GET /health
@@ -125,9 +145,14 @@ Payload:
 ## Seeds de categorias
 O arquivo de seeds está em app/seeds/categories.py. A função seed_default_categories está em app/modules/categories/service.py.
 
+## Seed de usuario admin
+Use app/seeds/users.py para criar um usuario admin via script, por exemplo:
+python -c "from app.core.database import SessionLocal; from app.seeds.users import seed_admin_user; db=SessionLocal(); seed_admin_user(db, 'admin@example.com', 'secret')"
+
 ## Observações
 - O endpoint /email/parse-and-create depende do banco e grava a transação com vínculo ao email bruto.
 - O campo card_last4 é preenchido quando encontrado nos emails.
+- O OAuth do Gmail armazena estado e credenciais no Redis.
 
 ## Estrutura
 - app/modules/accounts

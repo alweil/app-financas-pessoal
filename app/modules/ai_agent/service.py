@@ -6,7 +6,8 @@ def categorize_transaction(payload: CategorizationRequest) -> CategorizationResp
     text = normalize(f"{payload.merchant or ''} {payload.description or ''}")
     for rule in RULES:
         for keyword in rule.keywords:
-            if keyword in text:
+            normalized_keyword = normalize(keyword)
+            if normalized_keyword and normalized_keyword in text:
                 return CategorizationResponse(
                     category_id=None,
                     category_name=rule.category,
