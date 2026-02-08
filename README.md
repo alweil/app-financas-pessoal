@@ -142,6 +142,18 @@ Payload:
 	"start_date": "2026-02-01T00:00:00Z"
 }
 
+## Frontend (UI)
+O frontend em / permite autenticar, criar contas e sincronizar o Gmail.
+
+Passos:
+1. Use o bloco Criar Usuario para registrar um email e senha.
+2. Use o bloco Login para obter o token via /auth/token.
+3. O token fica salvo no navegador e e usado nas chamadas protegidas.
+4. O email do usuario logado aparece no bloco Autenticacao.
+5. Use o botao Limpar Token para sair.
+6. Crie contas no bloco Nova Conta.
+7. Na aba Sincronizar, selecione a conta desejada antes de iniciar a sync.
+
 ## Seeds de categorias
 O arquivo de seeds está em app/seeds/categories.py. A função seed_default_categories está em app/modules/categories/service.py.
 
