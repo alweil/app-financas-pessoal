@@ -7,12 +7,16 @@ from app.modules.auth.router import get_current_user
 from app.modules.email_parser.parser import parse_email
 from app.modules.email_parser.schemas import (
     ParseAndCreateResponse,
+    ParsedTransaction,
     ParseToTransactionRequest,
     ParseToTransactionResponse,
-    ParsedTransaction,
     RawEmailIngest,
 )
-from app.modules.email_parser.service import build_transaction_create, build_transaction_draft, ingest_email
+from app.modules.email_parser.service import (
+    build_transaction_create,
+    build_transaction_draft,
+    ingest_email,
+)
 from app.modules.transactions.service import create_transaction
 
 router = APIRouter(prefix="/email", tags=["email_parser"])
@@ -58,7 +62,9 @@ def parse_and_create(
     if not create_payload:
         return ParseAndCreateResponse(parsed=parsed, transaction=None)
     try:
-        transaction = create_transaction(db, user_id=current_user.id, payload=create_payload)
+        transaction = create_transaction(
+            db, user_id=current_user.id, payload=create_payload
+        )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     return ParseAndCreateResponse(parsed=parsed, transaction=transaction)

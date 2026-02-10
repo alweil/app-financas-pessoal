@@ -2,12 +2,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import RawEmail
-from app.modules.email_parser.schemas import ParsedTransaction, RawEmailIngest, TransactionDraft
+from app.modules.email_parser.schemas import (
+    ParsedTransaction,
+    RawEmailIngest,
+    TransactionDraft,
+)
 from app.modules.transactions.schemas import TransactionCreate
 
 
 def ingest_email(db: Session, user_id: int, payload: RawEmailIngest) -> RawEmail:
-    existing = db.query(RawEmail).filter(RawEmail.message_id == payload.message_id).first()
+    existing = (
+        db.query(RawEmail).filter(RawEmail.message_id == payload.message_id).first()
+    )
     if existing:
         return existing
     raw = RawEmail(
@@ -24,7 +30,9 @@ def ingest_email(db: Session, user_id: int, payload: RawEmailIngest) -> RawEmail
         db.refresh(raw)
     except IntegrityError:
         db.rollback()
-        existing = db.query(RawEmail).filter(RawEmail.message_id == payload.message_id).first()
+        existing = (
+            db.query(RawEmail).filter(RawEmail.message_id == payload.message_id).first()
+        )
         if existing:
             return existing
         raise

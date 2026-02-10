@@ -38,7 +38,7 @@ DEFAULT_CATEGORIES = [
             "Médicos",
             "Plano de Saúde",
             "Academia",
-            "Dentista"
+            "Dentista",
         ],
     },
     {

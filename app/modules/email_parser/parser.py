@@ -316,7 +316,12 @@ def detect_payment_method(text: str, default: str | None) -> str | None:
         return "boleto"
     if "débito" in haystack or "debito" in haystack:
         return "debit_card"
-    if "crédito" in haystack or "credito" in haystack or "cartão" in haystack or "cartao" in haystack:
+    if (
+        "crédito" in haystack
+        or "credito" in haystack
+        or "cartão" in haystack
+        or "cartao" in haystack
+    ):
         return "credit_card"
     return default
 

@@ -46,12 +46,26 @@ def test_sync_gmail_emails_creates_transactions(db_session):
         reason="test",
     )
 
-    with patch("app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()), \
-        patch("app.modules.gmail_sync.service.search_messages", return_value=message_ids), \
-        patch("app.modules.gmail_sync.service.fetch_message_content", side_effect=gmail_messages), \
-        patch("app.modules.gmail_sync.service.parse_email", return_value=parsed), \
-        patch("app.modules.gmail_sync.service.ingest_email", return_value=SimpleNamespace(id=1)), \
-        patch("app.modules.gmail_sync.service.create_transaction") as create_transaction:
+    with (
+        patch(
+            "app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()
+        ),
+        patch(
+            "app.modules.gmail_sync.service.search_messages", return_value=message_ids
+        ),
+        patch(
+            "app.modules.gmail_sync.service.fetch_message_content",
+            side_effect=gmail_messages,
+        ),
+        patch("app.modules.gmail_sync.service.parse_email", return_value=parsed),
+        patch(
+            "app.modules.gmail_sync.service.ingest_email",
+            return_value=SimpleNamespace(id=1),
+        ),
+        patch(
+            "app.modules.gmail_sync.service.create_transaction"
+        ) as create_transaction,
+    ):
         result = sync_gmail_emails(
             db=db_session,
             credentials_dict={"token": "x"},
@@ -69,8 +83,11 @@ def test_sync_gmail_emails_creates_transactions(db_session):
 def test_sync_gmail_emails_skips_non_bank(db_session):
     config = GmailSyncConfig(query="", max_results=10)
 
-    with patch("app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()), \
-        patch("app.modules.gmail_sync.service.search_messages", return_value=["msg-1"]), \
+    with (
+        patch(
+            "app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()
+        ),
+        patch("app.modules.gmail_sync.service.search_messages", return_value=["msg-1"]),
         patch(
             "app.modules.gmail_sync.service.fetch_message_content",
             return_value=GmailMessage(
@@ -81,8 +98,9 @@ def test_sync_gmail_emails_skips_non_bank(db_session):
                 body="Hello",
                 bank_source=None,
             ),
-        ), \
-        patch("app.modules.gmail_sync.service.parse_email") as parse_email:
+        ),
+        patch("app.modules.gmail_sync.service.parse_email") as parse_email,
+    ):
         result = sync_gmail_emails(
             db=db_session,
             credentials_dict={"token": "x"},
@@ -111,8 +129,11 @@ def test_sync_gmail_emails_deduplicates(db_session):
 
     config = GmailSyncConfig(query="", max_results=10)
 
-    with patch("app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()), \
-        patch("app.modules.gmail_sync.service.search_messages", return_value=["msg-1"]), \
+    with (
+        patch(
+            "app.modules.gmail_sync.service.get_gmail_service", return_value=MagicMock()
+        ),
+        patch("app.modules.gmail_sync.service.search_messages", return_value=["msg-1"]),
         patch(
             "app.modules.gmail_sync.service.fetch_message_content",
             return_value=GmailMessage(
@@ -123,8 +144,9 @@ def test_sync_gmail_emails_deduplicates(db_session):
                 body="Compra de R$ 10,00 aprovada em TESTE",
                 bank_source="nubank",
             ),
-        ), \
-        patch("app.modules.gmail_sync.service.parse_email") as parse_email:
+        ),
+        patch("app.modules.gmail_sync.service.parse_email") as parse_email,
+    ):
         result = sync_gmail_emails(
             db=db_session,
             credentials_dict={"token": "x"},

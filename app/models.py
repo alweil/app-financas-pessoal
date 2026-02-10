@@ -27,7 +27,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     accounts: Mapped[list["Account"]] = relationship(back_populates="user")
     categories: Mapped[list["Category"]] = relationship(back_populates="user")
@@ -72,7 +74,9 @@ class RawEmail(Base):
     from_address: Mapped[str] = mapped_column(String(255), nullable=False)
     subject: Mapped[Optional[str]] = mapped_column(String(255))
     body: Mapped[str] = mapped_column(String)
-    received_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
     processed: Mapped[bool] = mapped_column(Boolean, default=False)
     bank_source: Mapped[Optional[str]] = mapped_column(String(80))
 
@@ -85,7 +89,9 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     merchant: Mapped[Optional[str]] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(String(255))
-    transaction_date: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    transaction_date: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
     transaction_type: Mapped[Optional[str]] = mapped_column(String(40))
     payment_method: Mapped[Optional[str]] = mapped_column(String(40))
     card_last4: Mapped[Optional[str]] = mapped_column(String(4))
@@ -103,10 +109,14 @@ class Budget(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"), nullable=False)
+    category_id: Mapped[int] = mapped_column(
+        ForeignKey("categories.id"), nullable=False
+    )
     amount_limit: Mapped[float] = mapped_column(Float, nullable=False)
     period: Mapped[BudgetPeriod] = mapped_column(Enum(BudgetPeriod), nullable=False)
-    start_date: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    start_date: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(UTC)
+    )
 
     user: Mapped["User"] = relationship(back_populates="budgets")
     category: Mapped["Category"] = relationship(back_populates="budgets")

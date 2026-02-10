@@ -1,17 +1,17 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.modules.accounts.router import router as accounts_router
+from app.modules.ai_agent.router import router as ai_agent_router
+from app.modules.auth.router import router as auth_router
 from app.modules.budgets.router import router as budgets_router
 from app.modules.categories.router import router as categories_router
-from app.modules.transactions.router import router as transactions_router
 from app.modules.email_parser.router import router as email_parser_router
-from app.modules.ai_agent.router import router as ai_agent_router
-from app.modules.notifications.router import router as notifications_router
 from app.modules.gmail_sync.router import router as gmail_sync_router
-from app.modules.auth.router import router as auth_router
+from app.modules.notifications.router import router as notifications_router
+from app.modules.transactions.router import router as transactions_router
 
 app = FastAPI(title=settings.app_name)
 

@@ -4,7 +4,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.pagination import PaginationParams, get_pagination_params
 from app.models import User
-from app.modules.accounts.schemas import AccountCreate, AccountListResponse, AccountRead, AccountUpdate
+from app.modules.accounts.schemas import (
+    AccountCreate,
+    AccountListResponse,
+    AccountRead,
+    AccountUpdate,
+)
 from app.modules.accounts.service import (
     create_account,
     delete_account,
@@ -65,7 +70,9 @@ def update(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    account = update_account(db, user_id=current_user.id, account_id=account_id, payload=payload)
+    account = update_account(
+        db, user_id=current_user.id, account_id=account_id, payload=payload
+    )
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     return account

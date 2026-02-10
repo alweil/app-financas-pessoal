@@ -3,13 +3,14 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.core.pagination import paginate_query
-
 from app.models import Account, Transaction
 from app.modules.ai_agent.service import categorize_with_db
 from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
 
 
-def create_transaction(db: Session, user_id: int, payload: TransactionCreate) -> Transaction:
+def create_transaction(
+    db: Session, user_id: int, payload: TransactionCreate
+) -> Transaction:
     account = (
         db.query(Account)
         .filter(Account.id == payload.account_id, Account.user_id == user_id)
@@ -19,7 +20,9 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
         raise ValueError("Account not found")
     category_id = payload.category_id
     if category_id is None:
-        categorization = categorize_with_db(db, user_id, payload.merchant, payload.description)
+        categorization = categorize_with_db(
+            db, user_id, payload.merchant, payload.description
+        )
         category_id = categorization.category_id
 
     transaction = Transaction(
@@ -84,7 +87,9 @@ def list_transactions_filtered(
     return paginate_query(query, skip=skip, limit=limit)
 
 
-def get_transaction(db: Session, user_id: int, transaction_id: int) -> Transaction | None:
+def get_transaction(
+    db: Session, user_id: int, transaction_id: int
+) -> Transaction | None:
     return (
         db.query(Transaction)
         .join(Account, Transaction.account_id == Account.id)
