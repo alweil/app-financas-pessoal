@@ -2,7 +2,10 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from app.core.pagination import paginate_query
+
 from app.models import Account, Transaction
+from app.modules.ai_agent.service import categorize_with_db
 from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
 
 
@@ -14,6 +17,11 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
     )
     if not account:
         raise ValueError("Account not found")
+    category_id = payload.category_id
+    if category_id is None:
+        categorization = categorize_with_db(db, user_id, payload.merchant, payload.description)
+        category_id = categorization.category_id
+
     transaction = Transaction(
         account_id=payload.account_id,
         amount=payload.amount,
@@ -25,7 +33,7 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
         card_last4=payload.card_last4,
         installments_total=payload.installments_total,
         installments_current=payload.installments_current,
-        category_id=payload.category_id,
+        category_id=category_id,
         raw_email_id=payload.raw_email_id,
     )
     db.add(transaction)
@@ -34,23 +42,30 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
     return transaction
 
 
-def list_transactions(db: Session, user_id: int) -> list[Transaction]:
-    return (
+def list_transactions(
+    db: Session,
+    user_id: int,
+    skip: int,
+    limit: int,
+) -> tuple[list[Transaction], int]:
+    query = (
         db.query(Transaction)
         .join(Account, Transaction.account_id == Account.id)
         .filter(Account.user_id == user_id)
-        .all()
     )
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def list_transactions_filtered(
     db: Session,
     user_id: int,
+    skip: int,
+    limit: int,
     account_id: int | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     category_id: int | None = None,
-) -> list[Transaction]:
+) -> tuple[list[Transaction], int]:
     query = (
         db.query(Transaction)
         .join(Account, Transaction.account_id == Account.id)
@@ -66,7 +81,7 @@ def list_transactions_filtered(
     if category_id is not None:
         query = query.filter(Transaction.category_id == category_id)
 
-    return query.all()
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def get_transaction(db: Session, user_id: int, transaction_id: int) -> Transaction | None:

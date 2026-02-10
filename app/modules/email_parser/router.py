@@ -13,7 +13,6 @@ from app.modules.email_parser.schemas import (
     RawEmailIngest,
 )
 from app.modules.email_parser.service import build_transaction_create, build_transaction_draft, ingest_email
-from app.modules.transactions.schemas import TransactionCreate
 from app.modules.transactions.service import create_transaction
 
 router = APIRouter(prefix="/email", tags=["email_parser"])

@@ -53,3 +53,10 @@ class TransactionUpdate(BaseModel):
     installments_total: int | None = None
     installments_current: int | None = None
     category_id: int | None = None
+
+
+class TransactionListResponse(BaseModel):
+    items: list[TransactionRead]
+    total: int
+    skip: int
+    limit: int

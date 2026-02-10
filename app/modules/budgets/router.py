@@ -2,12 +2,25 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.pagination import PaginationParams, get_pagination_params
 from fastapi import HTTPException
 
 from app.models import User
 from app.modules.auth.router import get_current_user
-from app.modules.budgets.schemas import BudgetCreate, BudgetRead, BudgetSummary
-from app.modules.budgets.service import create_budget, get_budget_summary, list_budgets
+from app.modules.budgets.schemas import (
+    BudgetCreate,
+    BudgetListResponse,
+    BudgetRead,
+    BudgetSummary,
+    BudgetUpdate,
+)
+from app.modules.budgets.service import (
+    create_budget,
+    delete_budget,
+    get_budget_summary,
+    list_budgets,
+    update_budget,
+)
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
@@ -21,12 +34,24 @@ def create(
     return create_budget(db, user_id=current_user.id, payload=payload)
 
 
-@router.get("/", response_model=list[BudgetRead])
+@router.get("/", response_model=BudgetListResponse)
 def list_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    pagination: PaginationParams = Depends(get_pagination_params),
 ):
-    return list_budgets(db, user_id=current_user.id)
+    items, total = list_budgets(
+        db,
+        user_id=current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+    )
+    return {
+        "items": items,
+        "total": total,
+        "skip": pagination.skip,
+        "limit": pagination.limit,
+    }
 
 
 @router.get("/{budget_id}/summary", response_model=BudgetSummary)
@@ -45,3 +70,28 @@ def summary(
     if not result:
         raise HTTPException(status_code=404, detail="Budget not found")
     return result
+
+
+@router.put("/{budget_id}", response_model=BudgetRead)
+def update(
+    budget_id: int,
+    payload: BudgetUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    budget = update_budget(db, user_id=current_user.id, budget_id=budget_id, payload=payload)
+    if not budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    return budget
+
+
+@router.delete("/{budget_id}")
+def delete(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    removed = delete_budget(db, user_id=current_user.id, budget_id=budget_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    return {"status": "deleted"}

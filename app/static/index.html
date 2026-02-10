@@ -543,7 +543,8 @@
                     }
                 });
                 if (!res.ok) throw new Error('Erro ao carregar contas');
-                const accounts = await res.json();
+                const data = await res.json();
+                const accounts = data.items || [];
                 state.accounts = accounts;
                 renderAccounts(accounts);
                 updateSyncAccounts(accounts);
@@ -611,7 +612,8 @@
                 ]);
                 
                 const account = await accountRes.json();
-                const transactions = await transactionsRes.json();
+                const transactionsData = await transactionsRes.json();
+                const transactions = transactionsData.items || [];
                 state.editingAccountId = account.id;
                 
                 document.getElementById('account-detail').innerHTML = `
@@ -688,7 +690,8 @@
                     }
                 });
                 if (!res.ok) throw new Error('Erro ao carregar transações');
-                const transactions = await res.json();
+                const data = await res.json();
+                const transactions = data.items || [];
                 renderTransactions(transactions, 'transactions-list');
             } catch (e) {
                 showError(e.message);

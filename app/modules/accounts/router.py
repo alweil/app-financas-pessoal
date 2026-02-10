@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.pagination import PaginationParams, get_pagination_params
 from app.models import User
-from app.modules.accounts.schemas import AccountCreate, AccountRead, AccountUpdate
+from app.modules.accounts.schemas import AccountCreate, AccountListResponse, AccountRead, AccountUpdate
 from app.modules.accounts.service import (
     create_account,
     delete_account,
@@ -25,12 +26,24 @@ def create(
     return create_account(db, user_id=current_user.id, payload=payload)
 
 
-@router.get("/", response_model=list[AccountRead])
+@router.get("/", response_model=AccountListResponse)
 def list_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    pagination: PaginationParams = Depends(get_pagination_params),
 ):
-    return list_accounts(db, user_id=current_user.id)
+    items, total = list_accounts(
+        db,
+        user_id=current_user.id,
+        skip=pagination.skip,
+        limit=pagination.limit,
+    )
+    return {
+        "items": items,
+        "total": total,
+        "skip": pagination.skip,
+        "limit": pagination.limit,
+    }
 
 
 @router.get("/{account_id}", response_model=AccountRead)

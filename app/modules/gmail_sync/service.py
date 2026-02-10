@@ -2,7 +2,6 @@
 import base64
 import json
 import os
-from datetime import datetime
 from typing import List, Optional, Dict, Any
 
 import redis
@@ -10,7 +9,6 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -194,7 +192,7 @@ def fetch_message_content(service, message_id: str) -> Optional[GmailMessage]:
             try:
                 from email.utils import parsedate_to_datetime
                 received_at = parsedate_to_datetime(date_str)
-            except:
+            except Exception:
                 pass
         
         # Detect bank

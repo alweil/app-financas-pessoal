@@ -1,5 +1,7 @@
 # Assessor Financeiro (Backend)
 
+![CI](https://github.com/alweil/app-financas-pessoal/actions/workflows/ci.yml/badge.svg)
+
 Backend modular monolítico para registrar contas, transações, categorias (com subcategorias), orçamentos e ingestão de notificações por email.
 Roda em produção no Railway com Postgres e Redis.
 
@@ -8,6 +10,15 @@ Inclui um frontend simples servido em / via FastAPI, com arquivos em app/static.
 ## Pré-requisitos
 - Python 3.11+
 - Docker (para Postgres e Redis)
+
+## Quick Start
+1. Copie `.env.example` para `.env` e ajuste as variáveis.
+2. Suba Postgres e Redis com `docker-compose up -d`.
+3. Instale dependências com `python -m pip install -r requirements.txt`.
+4. Rode migrações com `alembic upgrade head`.
+5. Inicie a API com `uvicorn app.main:app --reload`.
+
+Atalhos (opcional): use `make infra-up`, `make migrate`, `make run`.
 
 ## Configuração
 1. Copie o arquivo .env.example para .env e ajuste as variáveis.
@@ -37,6 +48,11 @@ Endpoints que funcionam sem banco:
 - DATABASE_URL
 - REDIS_URL
 - SECRET_KEY
+- ACCESS_TOKEN_EXPIRE_MINUTES
+- GMAIL_CLIENT_ID (opcional)
+- GMAIL_CLIENT_SECRET (opcional)
+- GMAIL_PROJECT_ID (opcional)
+- GMAIL_REDIRECT_URI (opcional)
 
 ## Endpoints
 

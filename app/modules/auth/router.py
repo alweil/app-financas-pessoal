@@ -5,7 +5,14 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import User
 from app.modules.auth.schemas import Token, UserCreate, UserRead
-from app.modules.auth.service import authenticate_user, create_access_token, create_user, decode_access_token, get_user_by_email
+from app.modules.auth.service import (
+    authenticate_user,
+    create_access_token,
+    create_user,
+    decode_access_token,
+    get_user_by_email,
+)
+from app.modules.categories.service import seed_default_categories
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -34,7 +41,9 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
     existing = get_user_by_email(db, payload.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return create_user(db, payload.email, payload.password)
+    user = create_user(db, payload.email, payload.password)
+    seed_default_categories(db, user_id=user.id)
+    return user
 
 
 @router.post("/token", response_model=Token)

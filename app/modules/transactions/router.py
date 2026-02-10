@@ -4,9 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.pagination import PaginationParams, get_pagination_params
 from app.models import User
 from app.modules.auth.router import get_current_user
-from app.modules.transactions.schemas import TransactionCreate, TransactionRead, TransactionUpdate
+from app.modules.transactions.schemas import (
+    TransactionCreate,
+    TransactionListResponse,
+    TransactionRead,
+    TransactionUpdate,
+)
 from app.modules.transactions.service import (
     create_transaction,
     delete_transaction,
@@ -31,7 +37,7 @@ def create(
         raise HTTPException(status_code=404, detail=str(exc))
 
 
-@router.get("/", response_model=list[TransactionRead])
+@router.get("/", response_model=TransactionListResponse)
 def list_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -39,17 +45,32 @@ def list_all(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     category_id: int | None = None,
+    pagination: PaginationParams = Depends(get_pagination_params),
 ):
     if account_id is not None or start_date is not None or end_date is not None or category_id is not None:
-        return list_transactions_filtered(
+        items, total = list_transactions_filtered(
             db,
             user_id=current_user.id,
+            skip=pagination.skip,
+            limit=pagination.limit,
             account_id=account_id,
             start_date=start_date,
             end_date=end_date,
             category_id=category_id,
         )
-    return list_transactions(db, user_id=current_user.id)
+    else:
+        items, total = list_transactions(
+            db,
+            user_id=current_user.id,
+            skip=pagination.skip,
+            limit=pagination.limit,
+        )
+    return {
+        "items": items,
+        "total": total,
+        "skip": pagination.skip,
+        "limit": pagination.limit,
+    }
 
 
 @router.get("/{transaction_id}", response_model=TransactionRead)

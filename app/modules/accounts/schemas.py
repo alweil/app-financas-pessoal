@@ -23,3 +23,10 @@ class AccountUpdate(BaseModel):
     bank_name: str | None = None
     account_type: AccountType | None = None
     nickname: str | None = None
+
+
+class AccountListResponse(BaseModel):
+    items: list[AccountRead]
+    total: int
+    skip: int
+    limit: int
