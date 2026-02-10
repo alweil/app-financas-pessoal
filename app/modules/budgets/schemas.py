@@ -23,6 +23,12 @@ class BudgetRead(BaseModel):
         from_attributes = True
 
 
+class BudgetUpdate(BaseModel):
+    amount_limit: float | None = None
+    period: BudgetPeriod | None = None
+    start_date: datetime | None = None
+
+
 class BudgetSummary(BaseModel):
     budget_id: int
     category_id: int

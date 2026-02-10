@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.pagination import paginate_query
 
 from app.models import Account, Transaction
+from app.modules.ai_agent.service import categorize_with_db
 from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
 
 
@@ -16,6 +17,11 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
     )
     if not account:
         raise ValueError("Account not found")
+    category_id = payload.category_id
+    if category_id is None:
+        categorization = categorize_with_db(db, user_id, payload.merchant, payload.description)
+        category_id = categorization.category_id
+
     transaction = Transaction(
         account_id=payload.account_id,
         amount=payload.amount,
@@ -27,7 +33,7 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
         card_last4=payload.card_last4,
         installments_total=payload.installments_total,
         installments_current=payload.installments_current,
-        category_id=payload.category_id,
+        category_id=category_id,
         raw_email_id=payload.raw_email_id,
     )
     db.add(transaction)

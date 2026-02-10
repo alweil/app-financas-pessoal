@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.pagination import paginate_query
 
 from app.models import Budget, BudgetPeriod, Category, Transaction
-from app.modules.budgets.schemas import BudgetCreate, BudgetSummary
+from app.modules.budgets.schemas import BudgetCreate, BudgetSummary, BudgetUpdate
 
 
 def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
@@ -28,13 +28,48 @@ def list_budgets(db: Session, user_id: int, skip: int, limit: int) -> tuple[list
     return paginate_query(query, skip=skip, limit=limit)
 
 
+def get_budget(db: Session, user_id: int, budget_id: int) -> Budget | None:
+    return db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+
+
+def update_budget(
+    db: Session,
+    user_id: int,
+    budget_id: int,
+    payload: BudgetUpdate,
+) -> Budget | None:
+    budget = get_budget(db, user_id=user_id, budget_id=budget_id)
+    if not budget:
+        return None
+
+    if "amount_limit" in payload.model_fields_set:
+        budget.amount_limit = payload.amount_limit
+    if "period" in payload.model_fields_set:
+        budget.period = BudgetPeriod(payload.period)
+    if "start_date" in payload.model_fields_set:
+        budget.start_date = payload.start_date
+
+    db.commit()
+    db.refresh(budget)
+    return budget
+
+
+def delete_budget(db: Session, user_id: int, budget_id: int) -> bool:
+    budget = get_budget(db, user_id=user_id, budget_id=budget_id)
+    if not budget:
+        return False
+    db.delete(budget)
+    db.commit()
+    return True
+
+
 def get_budget_summary(
     db: Session,
     user_id: int,
     budget_id: int,
     include_subcategories: bool,
 ) -> BudgetSummary | None:
-    budget = db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+    budget = get_budget(db, user_id=user_id, budget_id=budget_id)
     if not budget:
         return None
 
