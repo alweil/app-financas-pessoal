@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from app.core.pagination import paginate_query
-
 from app.models import Budget, Category, Transaction
 from app.modules.categories.schemas import CategoryCreate, CategoryUpdate
 from app.seeds.categories import DEFAULT_CATEGORIES
@@ -21,7 +20,9 @@ def create_category(db: Session, user_id: int, payload: CategoryCreate) -> Categ
     return category
 
 
-def list_categories(db: Session, user_id: int, skip: int, limit: int) -> tuple[list[Category], int]:
+def list_categories(
+    db: Session, user_id: int, skip: int, limit: int
+) -> tuple[list[Category], int]:
     query = db.query(Category).filter(Category.user_id == user_id)
     return paginate_query(query, skip=skip, limit=limit)
 
@@ -76,7 +77,9 @@ def delete_category(db: Session, user_id: int, category_id: int) -> bool | None:
         db.query(Transaction).filter(Transaction.category_id == category_id).first()
         is not None
     )
-    in_budgets = db.query(Budget).filter(Budget.category_id == category_id).first() is not None
+    in_budgets = (
+        db.query(Budget).filter(Budget.category_id == category_id).first() is not None
+    )
 
     if in_transactions or in_budgets:
         raise ValueError("Category in use")

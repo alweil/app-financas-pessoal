@@ -22,7 +22,9 @@ def register_and_login(client: TestClient):
 def get_category_by_name(categories, name, parent_name=None):
     parent_id = None
     if parent_name:
-        parent_id = next((c["id"] for c in categories if c["name"] == parent_name), None)
+        parent_id = next(
+            (c["id"] for c in categories if c["name"] == parent_name), None
+        )
     for category in categories:
         if category["name"] == name:
             if parent_name is None:
@@ -116,7 +118,11 @@ def test_budget_crud(client: TestClient):
 
     update_response = client.put(
         f"/budgets/{budget['id']}",
-        json={"amount_limit": 1200, "period": "yearly", "start_date": datetime.now(UTC).isoformat()},
+        json={
+            "amount_limit": 1200,
+            "period": "yearly",
+            "start_date": datetime.now(UTC).isoformat(),
+        },
         headers=headers,
     )
     assert update_response.status_code == 200
@@ -132,7 +138,9 @@ def test_auto_categorize_transaction(client: TestClient):
 
     categories_response = client.get("/categories/?limit=200", headers=headers)
     categories = categories_response.json()["items"]
-    uber_category = get_category_by_name(categories, "Uber/99", parent_name="Transporte")
+    uber_category = get_category_by_name(
+        categories, "Uber/99", parent_name="Transporte"
+    )
 
     create_response = client.post(
         "/transactions/",

@@ -19,7 +19,9 @@ def test_transaction_category_flow(client):
 
     # create an account
     acct = client.post(
-        "/accounts/", json={"bank_name": "TestBank", "account_type": "checking"}, headers=headers
+        "/accounts/",
+        json={"bank_name": "TestBank", "account_type": "checking"},
+        headers=headers,
     )
     assert acct.status_code == 200
     account_id = acct.json()["id"]
@@ -57,7 +59,9 @@ def test_transaction_category_flow(client):
     assert get_resp.json()["category_id"] == category_id
 
     # update transaction with null should leave category unchanged (service ignores None)
-    upd = client.put(f"/transactions/{tx_id}", json={"category_id": None}, headers=headers)
+    upd = client.put(
+        f"/transactions/{tx_id}", json={"category_id": None}, headers=headers
+    )
     assert upd.status_code == 200
     assert upd.json()["category_id"] == category_id
 
@@ -69,4 +73,3 @@ def test_transaction_category_flow(client):
     list_resp2 = client.get("/transactions/", headers=headers)
     assert list_resp2.status_code == 200
     assert list_resp2.json()["total"] == 0
-

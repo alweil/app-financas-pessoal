@@ -1,5 +1,5 @@
-from app.modules.ai_agent.service import categorize_transaction
 from app.modules.ai_agent.schemas import CategorizationRequest
+from app.modules.ai_agent.service import categorize_transaction
 
 
 def test_transport_uber():

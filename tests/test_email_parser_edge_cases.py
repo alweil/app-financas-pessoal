@@ -83,7 +83,9 @@ def test_email_parse_endpoints(client: TestClient):
         "category_id": 2,
         "email": payload,
     }
-    response = client.post("/email/parse-to-transaction", json=parse_to_transaction_payload)
+    response = client.post(
+        "/email/parse-to-transaction", json=parse_to_transaction_payload
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["parsed"]["success"] is True

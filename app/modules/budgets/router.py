@@ -1,10 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.pagination import PaginationParams, get_pagination_params
-from fastapi import HTTPException
-
 from app.models import User
 from app.modules.auth.router import get_current_user
 from app.modules.budgets.schemas import (
@@ -79,7 +77,9 @@ def update(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    budget = update_budget(db, user_id=current_user.id, budget_id=budget_id, payload=payload)
+    budget = update_budget(
+        db, user_id=current_user.id, budget_id=budget_id, payload=payload
+    )
     if not budget:
         raise HTTPException(status_code=404, detail="Budget not found")
     return budget

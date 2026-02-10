@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from app.core.pagination import paginate_query
-
 from app.models import Account, AccountType
 from app.modules.accounts.schemas import AccountCreate, AccountUpdate
 
@@ -19,7 +18,9 @@ def create_account(db: Session, user_id: int, payload: AccountCreate) -> Account
     return account
 
 
-def list_accounts(db: Session, user_id: int, skip: int, limit: int) -> tuple[list[Account], int]:
+def list_accounts(
+    db: Session, user_id: int, skip: int, limit: int
+) -> tuple[list[Account], int]:
     query = db.query(Account).filter(Account.user_id == user_id)
     return paginate_query(query, skip=skip, limit=limit)
 

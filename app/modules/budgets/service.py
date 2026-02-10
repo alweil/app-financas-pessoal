@@ -4,7 +4,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.pagination import paginate_query
-
 from app.models import Budget, BudgetPeriod, Category, Transaction
 from app.modules.budgets.schemas import BudgetCreate, BudgetSummary, BudgetUpdate
 
@@ -21,7 +20,11 @@ def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
         category_id=payload.category_id,
         amount_limit=payload.amount_limit,
         period=BudgetPeriod(payload.period),
-        start_date=_to_naive(payload.start_date) if payload.start_date else datetime.now(UTC).replace(tzinfo=None),
+        start_date=(
+            _to_naive(payload.start_date)
+            if payload.start_date
+            else datetime.now(UTC).replace(tzinfo=None)
+        ),
     )
     db.add(budget)
     db.commit()
@@ -29,13 +32,19 @@ def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
     return budget
 
 
-def list_budgets(db: Session, user_id: int, skip: int, limit: int) -> tuple[list[Budget], int]:
+def list_budgets(
+    db: Session, user_id: int, skip: int, limit: int
+) -> tuple[list[Budget], int]:
     query = db.query(Budget).filter(Budget.user_id == user_id)
     return paginate_query(query, skip=skip, limit=limit)
 
 
 def get_budget(db: Session, user_id: int, budget_id: int) -> Budget | None:
-    return db.query(Budget).filter(Budget.id == budget_id, Budget.user_id == user_id).first()
+    return (
+        db.query(Budget)
+        .filter(Budget.id == budget_id, Budget.user_id == user_id)
+        .first()
+    )
 
 
 def update_budget(
@@ -53,7 +62,9 @@ def update_budget(
     if "period" in payload.model_fields_set:
         budget.period = BudgetPeriod(payload.period)
     if "start_date" in payload.model_fields_set:
-        budget.start_date = _to_naive(payload.start_date) if payload.start_date else None
+        budget.start_date = (
+            _to_naive(payload.start_date) if payload.start_date else None
+        )
 
     db.commit()
     db.refresh(budget)
@@ -103,7 +114,9 @@ def get_budget_summary(
     )
 
 
-def _resolve_period_window(start_date: datetime, period: BudgetPeriod) -> tuple[datetime, datetime]:
+def _resolve_period_window(
+    start_date: datetime, period: BudgetPeriod
+) -> tuple[datetime, datetime]:
     now = datetime.now(UTC).replace(tzinfo=None)
     if period == BudgetPeriod.weekly:
         return _rolling_window(start_date, now, days=7)
@@ -112,7 +125,9 @@ def _resolve_period_window(start_date: datetime, period: BudgetPeriod) -> tuple[
     return _rolling_window_years(start_date, now, years=1)
 
 
-def _rolling_window(start_date: datetime, now: datetime, days: int) -> tuple[datetime, datetime]:
+def _rolling_window(
+    start_date: datetime, now: datetime, days: int
+) -> tuple[datetime, datetime]:
     delta_days = (now - start_date).days
     if delta_days < 0:
         return start_date, start_date + timedelta(days=days)
@@ -122,7 +137,9 @@ def _rolling_window(start_date: datetime, now: datetime, days: int) -> tuple[dat
     return window_start, window_end
 
 
-def _rolling_window_months(start_date: datetime, now: datetime, months: int) -> tuple[datetime, datetime]:
+def _rolling_window_months(
+    start_date: datetime, now: datetime, months: int
+) -> tuple[datetime, datetime]:
     window_start = start_date
     window_end = _add_months(window_start, months)
     while window_end <= now:
@@ -131,7 +148,9 @@ def _rolling_window_months(start_date: datetime, now: datetime, months: int) -> 
     return window_start, window_end
 
 
-def _rolling_window_years(start_date: datetime, now: datetime, years: int) -> tuple[datetime, datetime]:
+def _rolling_window_years(
+    start_date: datetime, now: datetime, years: int
+) -> tuple[datetime, datetime]:
     window_start = start_date
     window_end = _add_years(window_start, years)
     while window_end <= now:
@@ -162,7 +181,9 @@ def _days_in_month(year: int, month: int) -> int:
     return (next_month - timedelta(days=1)).day
 
 
-def _collect_category_ids(db: Session, category_id: int, include_subcategories: bool) -> list[int]:
+def _collect_category_ids(
+    db: Session, category_id: int, include_subcategories: bool
+) -> list[int]:
     if not include_subcategories:
         return [category_id]
     ids = [category_id]

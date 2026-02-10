@@ -49,7 +49,9 @@ def categorize_with_db(
     merchant: str | None,
     description: str | None,
 ) -> CategorizationResponse:
-    response = categorize_transaction(CategorizationRequest(merchant=merchant, description=description))
+    response = categorize_transaction(
+        CategorizationRequest(merchant=merchant, description=description)
+    )
     if not response.category_name:
         return response
 
@@ -65,7 +67,9 @@ def categorize_with_db(
 
     selected = parent
     if response.subcategory_name and parent:
-        child = _find_category(categories, response.subcategory_name, parent_id=parent.id)
+        child = _find_category(
+            categories, response.subcategory_name, parent_id=parent.id
+        )
         if not child and response.subcategory_name == "Outros":
             child = Category(user_id=user_id, name="Outros", parent_id=parent.id)
             db.add(child)

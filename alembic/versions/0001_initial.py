@@ -5,8 +5,9 @@ Revises:
 Create Date: 2026-02-08 00:00:00.000000
 """
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0001_initial"
@@ -32,7 +33,9 @@ def upgrade() -> None:
         sa.Column("bank_name", sa.String(length=80), nullable=False),
         sa.Column(
             "account_type",
-            sa.Enum("checking", "savings", "credit_card", "investment", name="accounttype"),
+            sa.Enum(
+                "checking", "savings", "credit_card", "investment", name="accounttype"
+            ),
             nullable=False,
         ),
         sa.Column("nickname", sa.String(length=120), nullable=True),
@@ -48,8 +51,12 @@ def upgrade() -> None:
         sa.Column("icon", sa.String(length=40), nullable=True),
         sa.Column("color", sa.String(length=20), nullable=True),
         sa.Column("parent_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_categories_user_id"),
-        sa.ForeignKeyConstraint(["parent_id"], ["categories.id"], name="fk_categories_parent_id"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], name="fk_categories_user_id"
+        ),
+        sa.ForeignKeyConstraint(
+            ["parent_id"], ["categories.id"], name="fk_categories_parent_id"
+        ),
     )
 
     op.create_table(
@@ -61,10 +68,14 @@ def upgrade() -> None:
         sa.Column("subject", sa.String(length=255), nullable=True),
         sa.Column("body", sa.String(), nullable=False),
         sa.Column("received_at", sa.DateTime(), nullable=False),
-        sa.Column("processed", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column(
+            "processed", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
         sa.Column("bank_source", sa.String(length=80), nullable=True),
         sa.UniqueConstraint("message_id", name="uq_raw_emails_message_id"),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_raw_emails_user_id"),
+        sa.ForeignKeyConstraint(
+            ["user_id"], ["users.id"], name="fk_raw_emails_user_id"
+        ),
     )
 
     op.create_table(
@@ -82,10 +93,18 @@ def upgrade() -> None:
         sa.Column("installments_current", sa.Integer(), nullable=True),
         sa.Column("category_id", sa.Integer(), nullable=True),
         sa.Column("raw_email_id", sa.Integer(), nullable=True),
-        sa.Column("is_manual", sa.Boolean(), nullable=False, server_default=sa.text("false")),
-        sa.ForeignKeyConstraint(["account_id"], ["accounts.id"], name="fk_transactions_account_id"),
-        sa.ForeignKeyConstraint(["category_id"], ["categories.id"], name="fk_transactions_category_id"),
-        sa.ForeignKeyConstraint(["raw_email_id"], ["raw_emails.id"], name="fk_transactions_raw_email_id"),
+        sa.Column(
+            "is_manual", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
+        sa.ForeignKeyConstraint(
+            ["account_id"], ["accounts.id"], name="fk_transactions_account_id"
+        ),
+        sa.ForeignKeyConstraint(
+            ["category_id"], ["categories.id"], name="fk_transactions_category_id"
+        ),
+        sa.ForeignKeyConstraint(
+            ["raw_email_id"], ["raw_emails.id"], name="fk_transactions_raw_email_id"
+        ),
     )
 
     op.create_table(
@@ -101,7 +120,9 @@ def upgrade() -> None:
         ),
         sa.Column("start_date", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], name="fk_budgets_user_id"),
-        sa.ForeignKeyConstraint(["category_id"], ["categories.id"], name="fk_budgets_category_id"),
+        sa.ForeignKeyConstraint(
+            ["category_id"], ["categories.id"], name="fk_budgets_category_id"
+        ),
     )
 
 

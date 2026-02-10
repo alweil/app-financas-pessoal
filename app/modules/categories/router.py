@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.pagination import PaginationParams, get_pagination_params
 from app.models import User
+from app.modules.auth.router import get_current_user
 from app.modules.categories.schemas import (
     CategoryCreate,
     CategoryListResponse,
@@ -18,7 +19,6 @@ from app.modules.categories.service import (
     seed_default_categories,
     update_category,
 )
-from app.modules.auth.router import get_current_user
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
@@ -79,7 +79,9 @@ def update(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    category = update_category(db, user_id=current_user.id, category_id=category_id, payload=payload)
+    category = update_category(
+        db, user_id=current_user.id, category_id=category_id, payload=payload
+    )
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     return category

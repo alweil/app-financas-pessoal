@@ -43,7 +43,9 @@ def create_budget(db_session, user_id: int, category_id: int, amount: float) -> 
 
 
 def create_transaction(db_session, account_id: int, amount: float) -> Transaction:
-    transaction = Transaction(account_id=account_id, amount=amount, transaction_date=datetime.now(UTC))
+    transaction = Transaction(
+        account_id=account_id, amount=amount, transaction_date=datetime.now(UTC)
+    )
     db_session.add(transaction)
     db_session.commit()
     db_session.refresh(transaction)
@@ -97,7 +99,9 @@ class TestPagination:
         category_id = categories[0].id
 
         for amount in [100.0, 200.0, 300.0]:
-            create_budget(db_session, user_id=user.id, category_id=category_id, amount=amount)
+            create_budget(
+                db_session, user_id=user.id, category_id=category_id, amount=amount
+            )
 
         response = client.get("/budgets/?skip=1&limit=1", headers=headers)
         assert response.status_code == 200

@@ -105,7 +105,9 @@ def test_transaction_crud_and_filters(client: TestClient):
     get_response = client.get(f"/transactions/{transaction['id']}", headers=headers)
     assert get_response.status_code == 200
 
-    delete_response = client.delete(f"/transactions/{transaction['id']}", headers=headers)
+    delete_response = client.delete(
+        f"/transactions/{transaction['id']}", headers=headers
+    )
     assert delete_response.status_code == 200
 
     missing_response = client.get(f"/transactions/{transaction['id']}", headers=headers)
