@@ -9,13 +9,19 @@ from app.models import Budget, BudgetPeriod, Category, Transaction
 from app.modules.budgets.schemas import BudgetCreate, BudgetSummary, BudgetUpdate
 
 
+def _to_naive(value: datetime) -> datetime:
+    if value.tzinfo is not None:
+        return value.replace(tzinfo=None)
+    return value
+
+
 def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
     budget = Budget(
         user_id=user_id,
         category_id=payload.category_id,
         amount_limit=payload.amount_limit,
         period=BudgetPeriod(payload.period),
-        start_date=payload.start_date or datetime.now(UTC),
+        start_date=_to_naive(payload.start_date) if payload.start_date else datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(budget)
     db.commit()
@@ -47,7 +53,7 @@ def update_budget(
     if "period" in payload.model_fields_set:
         budget.period = BudgetPeriod(payload.period)
     if "start_date" in payload.model_fields_set:
-        budget.start_date = payload.start_date
+        budget.start_date = _to_naive(payload.start_date) if payload.start_date else None
 
     db.commit()
     db.refresh(budget)
@@ -98,7 +104,7 @@ def get_budget_summary(
 
 
 def _resolve_period_window(start_date: datetime, period: BudgetPeriod) -> tuple[datetime, datetime]:
-    now = datetime.now(UTC)
+    now = datetime.now(UTC).replace(tzinfo=None)
     if period == BudgetPeriod.weekly:
         return _rolling_window(start_date, now, days=7)
     if period == BudgetPeriod.monthly:
