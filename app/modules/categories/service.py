@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 
+from app.core.pagination import paginate_query
+
 from app.models import Category
 from app.modules.categories.schemas import CategoryCreate
 from app.seeds.categories import DEFAULT_CATEGORIES
@@ -19,8 +21,9 @@ def create_category(db: Session, user_id: int, payload: CategoryCreate) -> Categ
     return category
 
 
-def list_categories(db: Session, user_id: int) -> list[Category]:
-    return db.query(Category).filter(Category.user_id == user_id).all()
+def list_categories(db: Session, user_id: int, skip: int, limit: int) -> tuple[list[Category], int]:
+    query = db.query(Category).filter(Category.user_id == user_id)
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def get_category(db: Session, user_id: int, category_id: int) -> Category | None:
@@ -32,6 +35,9 @@ def get_category(db: Session, user_id: int, category_id: int) -> Category | None
 
 
 def seed_default_categories(db: Session, user_id: int) -> list[Category]:
+    existing = db.query(Category).filter(Category.user_id == user_id).count()
+    if existing > 0:
+        return db.query(Category).filter(Category.user_id == user_id).all()
     created: list[Category] = []
     for item in DEFAULT_CATEGORIES:
         parent = Category(user_id=user_id, name=item["name"])

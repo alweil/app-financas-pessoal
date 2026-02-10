@@ -2,6 +2,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from app.core.pagination import paginate_query
+
 from app.models import Account, Transaction
 from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
 
@@ -34,23 +36,30 @@ def create_transaction(db: Session, user_id: int, payload: TransactionCreate) ->
     return transaction
 
 
-def list_transactions(db: Session, user_id: int) -> list[Transaction]:
-    return (
+def list_transactions(
+    db: Session,
+    user_id: int,
+    skip: int,
+    limit: int,
+) -> tuple[list[Transaction], int]:
+    query = (
         db.query(Transaction)
         .join(Account, Transaction.account_id == Account.id)
         .filter(Account.user_id == user_id)
-        .all()
     )
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def list_transactions_filtered(
     db: Session,
     user_id: int,
+    skip: int,
+    limit: int,
     account_id: int | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     category_id: int | None = None,
-) -> list[Transaction]:
+) -> tuple[list[Transaction], int]:
     query = (
         db.query(Transaction)
         .join(Account, Transaction.account_id == Account.id)
@@ -66,7 +75,7 @@ def list_transactions_filtered(
     if category_id is not None:
         query = query.filter(Transaction.category_id == category_id)
 
-    return query.all()
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def get_transaction(db: Session, user_id: int, transaction_id: int) -> Transaction | None:

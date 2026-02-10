@@ -32,3 +32,10 @@ class BudgetSummary(BaseModel):
     period_start: datetime
     period_end: datetime
     include_subcategories: bool
+
+
+class BudgetListResponse(BaseModel):
+    items: list[BudgetRead]
+    total: int
+    skip: int
+    limit: int

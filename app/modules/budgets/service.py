@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.pagination import paginate_query
+
 from app.models import Budget, BudgetPeriod, Category, Transaction
 from app.modules.budgets.schemas import BudgetCreate, BudgetSummary
 
@@ -21,8 +23,9 @@ def create_budget(db: Session, user_id: int, payload: BudgetCreate) -> Budget:
     return budget
 
 
-def list_budgets(db: Session, user_id: int) -> list[Budget]:
-    return db.query(Budget).filter(Budget.user_id == user_id).all()
+def list_budgets(db: Session, user_id: int, skip: int, limit: int) -> tuple[list[Budget], int]:
+    query = db.query(Budget).filter(Budget.user_id == user_id)
+    return paginate_query(query, skip=skip, limit=limit)
 
 
 def get_budget_summary(

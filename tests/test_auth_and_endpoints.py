@@ -37,8 +37,32 @@ def test_create_and_list_accounts(client):
     list_response = client.get("/accounts/", headers=headers)
     assert list_response.status_code == 200
     data = list_response.json()
-    assert len(data) == 1
-    assert data[0]["bank_name"] == "Nubank"
+    assert data["total"] == 1
+    assert data["skip"] == 0
+    assert data["limit"] == 50
+    assert len(data["items"]) == 1
+    assert data["items"][0]["bank_name"] == "Nubank"
+
+
+def test_list_accounts_pagination(client):
+    token = register_and_login(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for bank_name in ["Nubank", "Inter", "Itau"]:
+        response = client.post(
+            "/accounts/",
+            json={"bank_name": bank_name, "account_type": "checking"},
+            headers=headers,
+        )
+        assert response.status_code == 200
+
+    list_response = client.get("/accounts/?skip=1&limit=1", headers=headers)
+    assert list_response.status_code == 200
+    data = list_response.json()
+    assert data["total"] == 3
+    assert data["skip"] == 1
+    assert data["limit"] == 1
+    assert len(data["items"]) == 1
 
 
 def test_email_ingest_dedup(db_session):

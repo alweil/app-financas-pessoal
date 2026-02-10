@@ -17,3 +17,10 @@ class CategoryRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CategoryListResponse(BaseModel):
+    items: list[CategoryRead]
+    total: int
+    skip: int
+    limit: int
