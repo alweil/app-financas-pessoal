@@ -3,11 +3,11 @@ from datetime import datetime
 
 def register_and_login(client):
     resp = client.post(
-        "/auth/register", json={"email": "tx_user@example.com", "password": "secret"}
+        "/auth/register", json={"email": "tx_user@example.com", "password": "secret123"}
     )
     assert resp.status_code == 201
     token_resp = client.post(
-        "/auth/token", data={"username": "tx_user@example.com", "password": "secret"}
+        "/auth/token", data={"username": "tx_user@example.com", "password": "secret123"}
     )
     assert token_resp.status_code == 200
     return token_resp.json()["access_token"]

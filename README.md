@@ -198,6 +198,63 @@ Passos:
 4. O email do usuario logado aparece no bloco Autenticacao.
 5. Use o botao Limpar Token para sair.
 6. Crie contas no bloco Nova Conta.
+
+## Assessment (Resumo Tecnico)
+
+### Pontos fortes
+- Arquitetura modular monolitica bem separada por dominio (router, schemas, service).
+- Stack consistente: FastAPI + SQLAlchemy 2.0 + Alembic + Redis.
+- Testes com SQLite em memoria e fixtures de limpeza automatica.
+
+### Riscos e falhas prioritarias
+- Valores monetarios usam Float, com risco de erro de arredondamento. Preferir Numeric(12,2) ou inteiro em centavos.
+- Falta de validacao de senha e rate limit nos endpoints de autenticao.
+- Possivel XSS no frontend ao interpolar dados em innerHTML sem escaping.
+- Relacionamentos sem cascade podem falhar ao excluir contas/categorias com transacoes.
+- Budget summary filtra apenas por categoria e nao garante escopo por usuario.
+
+### Gaps funcionais
+- Sem recorrencia de transacoes (assinaturas, aluguel, salario).
+- Orçamentos sem alertas de excesso ou proximidade.
+- Saldo de conta nao e recalculado a partir das transacoes.
+- Exportacao CSV limitada aos dados carregados na tela.
+
+### UX/UI
+- Fluxo de autenticacao confuso (tres cards simultaneos).
+- Ausencia de controles de paginacao e feedback visual (toasts, loading states).
+- Nomenclatura sem acentos PT-BR em diversos textos.
+
+## Roadmap (Implementacao)
+
+### Fase 1 - Seguranca e integridade (1-2 semanas)
+- Migrar valores monetarios para Numeric e atualizar schemas.
+- Implementar validacao de senha e rate limit em /auth.
+- Corrigir XSS com escaping de strings no frontend.
+- Ajustar cascades e integridade referencial.
+
+### Fase 2 - Performance e dados (2-3 semanas)
+- Adicionar indices em transactions (date, category_id, account_id).
+- Padronizar ordenacao por data nas listagens.
+- Recalcular saldo da conta a partir de transacoes.
+- Corrigir escopo por usuario no budget summary.
+
+### Fase 3 - UX/UI (3-5 semanas)
+- Tornar Dashboard o ponto inicial e criar tabs dedicadas.
+- Simplificar fluxo de login/registro e esconder cards quando autenticado.
+- Adicionar paginacao, toasts e estados de carregamento.
+- Corrigir textos PT-BR e adicionar modo escuro.
+
+### Fase 4 - Funcionalidades (5-7 semanas)
+- Alertas de orcamento e notificacoes reais.
+- Transacoes recorrentes e job scheduler.
+- Exportacao server-side de CSV/PDF.
+- Charts com biblioteca leve (ex: Chart.js ou uPlot).
+
+### Fase 5 - Producao (7-9 semanas)
+- Versionamento de API (/api/v1).
+- CORS configuravel.
+- Logs estruturados e health check com DB/Redis.
+- Criptografar tokens Gmail no Redis.
 7. Na aba Transacoes, crie, edite, exclua e filtre transacoes.
 8. Na aba Sincronizar, selecione a conta desejada antes de iniciar a sync.
 

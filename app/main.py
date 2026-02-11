@@ -1,8 +1,11 @@
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.modules.accounts.router import router as accounts_router
 from app.modules.ai_agent.router import router as ai_agent_router
 from app.modules.auth.router import router as auth_router
@@ -14,6 +17,18 @@ from app.modules.notifications.router import router as notifications_router
 from app.modules.transactions.router import router as transactions_router
 
 app = FastAPI(title=settings.app_name)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded"},
+    )
+
+
+app.add_middleware(SlowAPIMiddleware)
 
 # Include API routers
 app.include_router(accounts_router)

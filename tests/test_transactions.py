@@ -6,13 +6,13 @@ from fastapi.testclient import TestClient
 def register_and_login(client: TestClient, email: str) -> dict:
     response = client.post(
         "/auth/register",
-        json={"email": email, "password": "secret"},
+        json={"email": email, "password": "secret123"},
     )
     assert response.status_code == 201
 
     token_response = client.post(
         "/auth/token",
-        data={"username": email, "password": "secret"},
+        data={"username": email, "password": "secret123"},
     )
     assert token_response.status_code == 200
     token = token_response.json()["access_token"]

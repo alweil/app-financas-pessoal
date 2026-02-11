@@ -1,6 +1,6 @@
 import { getAuthHeaders, getToken, persistToken, requestJson } from "./api.js";
 import { state } from "./state.js";
-import { clearError, clearStatus, formatDate, setActiveTab, setCurrentUser, showError, setStatus } from "./ui.js";
+import { clearError, clearStatus, escapeHtml, formatDate, setActiveTab, setCurrentUser, showError, setStatus } from "./ui.js";
 import { renderTransactions } from "./transactions.js";
 
 function buildSparkline(transactions) {
@@ -205,7 +205,7 @@ export function renderDashboardSummary(accounts) {
             const label = accountLookup.get(accountId) || `Conta ${accountId}`;
             return `
                 <div class="info-row">
-                    <span class="label">${label}</span>
+                    <span class="label">${escapeHtml(label)}</span>
                     <span class="value">R$ ${amount.toFixed(2)}</span>
                 </div>
             `;
@@ -239,7 +239,7 @@ export function renderDashboardSummary(accounts) {
                                 ? `${acc.bank_name} (${acc.nickname})`
                                 : acc.bank_name;
                             const selected = String(acc.id) === String(currentFilter) ? "selected" : "";
-                            return `<option value="${acc.id}" ${selected}>${label}</option>`;
+                            return `<option value="${acc.id}" ${selected}>${escapeHtml(label)}</option>`;
                         })
                         .join("")}
                 </select>
@@ -278,7 +278,7 @@ export function renderDashboardSummary(accounts) {
                         id="quick-category-name"
                         class="input"
                         type="text"
-                        value="${currentCategoryName}"
+                        value="${escapeHtml(currentCategoryName)}"
                         placeholder="Ex: Alimentacao"
                     />
                 </div>
@@ -290,7 +290,7 @@ export function renderDashboardSummary(accounts) {
                             .map((category) => {
                                 const selected =
                                     String(category.id) === String(currentCategoryParent) ? "selected" : "";
-                                return `<option value="${category.id}" ${selected}>${category.name}</option>`;
+                                return `<option value="${category.id}" ${selected}>${escapeHtml(category.name)}</option>`;
                             })
                             .join("")}
                     </select>
@@ -308,7 +308,7 @@ export function renderDashboardSummary(accounts) {
                           .map(
                               (t) => `
                         <div class="info-row">
-                            <span class="label">${t.merchant || t.description || "Transacao"}</span>
+                            <span class="label">${escapeHtml(t.merchant || t.description || "Transacao")}</span>
                             <span class="value">R$ ${(t.amount || 0).toFixed(2)} · ${formatDate(t.transaction_date)}</span>
                         </div>
                     `
@@ -368,12 +368,12 @@ export function renderDashboardSummary(accounts) {
                 <div class="kpi-card">
                     <div class="label">Maior entrada</div>
                     <div class="value">R$ ${maxIncomeTx ? Number(maxIncomeTx.amount).toFixed(2) : "0.00"}</div>
-                    <div class="helper">${maxIncomeTx ? maxIncomeTx.merchant || maxIncomeTx.description || "-" : "-"}</div>
+                    <div class="helper">${escapeHtml(maxIncomeTx ? maxIncomeTx.merchant || maxIncomeTx.description || "-" : "-")}</div>
                 </div>
                 <div class="kpi-card">
                     <div class="label">Maior saida</div>
                     <div class="value">R$ ${maxExpenseTx ? Math.abs(Number(maxExpenseTx.amount)).toFixed(2) : "0.00"}</div>
-                    <div class="helper">${maxExpenseTx ? maxExpenseTx.merchant || maxExpenseTx.description || "-" : "-"}</div>
+                    <div class="helper">${escapeHtml(maxExpenseTx ? maxExpenseTx.merchant || maxExpenseTx.description || "-" : "-")}</div>
                 </div>
             </div>
         </div>
@@ -448,7 +448,7 @@ export function renderDashboardSummary(accounts) {
                             .map(
                                 ([label, total]) => `
                             <div class="merchant-row">
-                                <span class="label">${label}</span>
+                                <span class="label">${escapeHtml(label)}</span>
                                 <div class="mini-bar">
                                     <span class="mini-bar-fill" style="width: ${(total / maxMerchantValue) * 100}%"></span>
                                 </div>
@@ -478,7 +478,7 @@ export function renderDashboardSummary(accounts) {
                             .map(
                                 ([categoryId, total]) => `
                             <div class="category-row">
-                                <span class="label">${formatCategoryLabel(categoryId)}</span>
+                                <span class="label">${escapeHtml(formatCategoryLabel(categoryId))}</span>
                                 <div class="mini-bar">
                                     <span class="mini-bar-fill" style="width: ${(total / maxCategoryValue) * 100}%"></span>
                                 </div>
@@ -526,12 +526,12 @@ export function renderAccounts(accounts) {
             (acc) => `
             <div class="card account-card" data-account-id="${acc.id}">
                 <div class="card-header">
-                    <span class="card-title">${acc.bank_name}</span>
+                    <span class="card-title">${escapeHtml(acc.bank_name)}</span>
                     <span class="badge">${getAccountTypeLabel(acc.account_type)}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">Apelido</span>
-                    <span class="value">${acc.nickname || "-"}</span>
+                    <span class="value">${escapeHtml(acc.nickname || "-")}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">Ultimo Saldo</span>
@@ -573,12 +573,12 @@ export async function showAccountDetail(accountId) {
             detail.innerHTML = `
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">${account.bank_name}</span>
+                        <span class="card-title">${escapeHtml(account.bank_name)}</span>
                         <span class="badge">${getAccountTypeLabel(account.account_type)}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Apelido</span>
-                        <span class="value">${account.nickname || "-"}</span>
+                        <span class="value">${escapeHtml(account.nickname || "-")}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Ultimo Saldo</span>
@@ -591,7 +591,7 @@ export async function showAccountDetail(accountId) {
                     </div>
                     <div class="field">
                         <label class="label" for="account-edit-bank-name">Banco</label>
-                        <input id="account-edit-bank-name" class="input" type="text" value="${account.bank_name}" />
+                        <input id="account-edit-bank-name" class="input" type="text" value="${escapeHtml(account.bank_name)}" />
                     </div>
                     <div class="field">
                         <label class="label" for="account-edit-type">Tipo</label>
@@ -604,7 +604,7 @@ export async function showAccountDetail(accountId) {
                     </div>
                     <div class="field">
                         <label class="label" for="account-edit-nickname">Apelido</label>
-                        <input id="account-edit-nickname" class="input" type="text" value="${account.nickname || ""}" />
+                        <input id="account-edit-nickname" class="input" type="text" value="${escapeHtml(account.nickname || "")}" />
                     </div>
                     <div class="actions-row">
                         <button class="btn btn-small btn-success" data-action="save-account">Salvar</button>
@@ -887,7 +887,7 @@ export function updateSyncAccounts(accounts) {
     select.innerHTML = accounts
         .map((acc) => {
             const label = acc.nickname ? `${acc.bank_name} (${acc.nickname})` : acc.bank_name;
-            return `<option value="${acc.id}">${label}</option>`;
+            return `<option value="${acc.id}">${escapeHtml(label)}</option>`;
         })
         .join("");
 
@@ -912,7 +912,7 @@ export function updateTransactionAccountOptions(accounts) {
 
         accounts.forEach((acc) => {
             const label = acc.nickname ? `${acc.bank_name} (${acc.nickname})` : acc.bank_name;
-            options.push(`<option value="${acc.id}">${label}</option>`);
+            options.push(`<option value="${acc.id}">${escapeHtml(label)}</option>`);
         });
 
         select.innerHTML = options.join("");

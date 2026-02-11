@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from fastapi.testclient import TestClient
 
@@ -16,7 +17,7 @@ def test_bradesco_purchase():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 12.34
+    assert result.amount == Decimal("12.34")
     assert result.merchant == "LOJA Z"
 
 
@@ -30,7 +31,7 @@ def test_inter_purchase():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 45.67
+    assert result.amount == Decimal("45.67")
     assert result.merchant == "LOJA W"
 
 
@@ -44,7 +45,7 @@ def test_generic_fallback():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 9.99
+    assert result.amount == Decimal("9.99")
     assert result.transaction_type == "unknown"
 
 
