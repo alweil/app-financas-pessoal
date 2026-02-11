@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from app.modules.email_parser.parser import parse_email
 from app.modules.email_parser.schemas import RawEmailIngest
 
@@ -12,7 +14,7 @@ def test_nubank_purchase():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 123.45
+    assert result.amount == Decimal("123.45")
     assert result.merchant == "PADARIA CENTRAL"
     assert result.transaction_type == "purchase"
     assert result.payment_method == "credit_card"
@@ -31,7 +33,7 @@ def test_pix_sent():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 50.0
+    assert result.amount == Decimal("50.00")
     assert result.transaction_type == "pix_out"
     assert result.payment_method == "pix"
 
@@ -46,7 +48,7 @@ def test_itau_purchase():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 85.90
+    assert result.amount == Decimal("85.90")
     assert result.merchant == "SUPERMERCADO X"
     assert result.payment_method == "debit_card"
     assert result.card_last4 == "4321"
@@ -62,7 +64,7 @@ def test_btg_purchase():
     )
     result = parse_email(payload)
     assert result.success is True
-    assert result.amount == 210.0
+    assert result.amount == Decimal("210.00")
     assert result.merchant == "LOJA Y"
     assert result.payment_method == "credit_card"
     assert result.card_last4 == "9876"

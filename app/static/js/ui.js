@@ -1,7 +1,7 @@
 export function showError(message) {
     const el = document.getElementById("error");
     if (el) {
-        el.innerHTML = `<div class="error">❌ ${message}</div>`;
+        el.innerHTML = `<div class="error">❌ ${escapeHtml(message)}</div>`;
     }
 }
 
@@ -15,8 +15,14 @@ export function clearError() {
 export function setStatus(message, type = "info") {
     const status = document.getElementById("status");
     if (status) {
-        status.innerHTML = `<div class="notice ${type}">${message}</div>`;
+        status.innerHTML = `<div class="notice ${type}">${escapeHtml(message)}</div>`;
     }
+}
+
+export function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value ?? "";
+    return div.innerHTML;
 }
 
 export function clearStatus() {

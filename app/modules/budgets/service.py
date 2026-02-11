@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -94,7 +95,7 @@ def get_budget_summary(
     category_ids = _collect_category_ids(db, budget.category_id, include_subcategories)
 
     amount_spent = (
-        db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
+        db.query(func.coalesce(func.sum(Transaction.amount), Decimal("0")))
         .filter(Transaction.category_id.in_(category_ids))
         .filter(Transaction.transaction_date >= period_start)
         .filter(Transaction.transaction_date < period_end)

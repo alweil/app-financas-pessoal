@@ -1,6 +1,7 @@
 from datetime import datetime
+from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.modules.transactions.schemas import PaymentMethod, TransactionType
 
@@ -14,9 +15,11 @@ class RawEmailIngest(BaseModel):
 
 
 class ParsedTransaction(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
     success: bool
     bank_source: str | None
-    amount: float | None
+    amount: Decimal | None
     merchant: str | None
     transaction_type: TransactionType | None
     payment_method: PaymentMethod | None
@@ -30,8 +33,10 @@ class ParsedTransaction(BaseModel):
 
 
 class TransactionDraft(BaseModel):
+    model_config = ConfigDict(json_encoders={Decimal: float})
+
     account_id: int
-    amount: float
+    amount: Decimal
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
@@ -55,9 +60,11 @@ class ParseToTransactionResponse(BaseModel):
 
 
 class TransactionCreated(BaseModel):
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
+
     id: int
     account_id: int
-    amount: float
+    amount: Decimal
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
@@ -68,9 +75,6 @@ class TransactionCreated(BaseModel):
     installments_current: int | None = None
     category_id: int | None = None
     raw_email_id: int | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class ParseAndCreateResponse(BaseModel):

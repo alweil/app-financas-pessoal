@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 TransactionType = Literal["purchase", "pix_in", "pix_out", "unknown"]
 PaymentMethod = Literal["credit_card", "debit_card", "pix", "boleto"]
@@ -9,7 +10,7 @@ PaymentMethod = Literal["credit_card", "debit_card", "pix", "boleto"]
 
 class TransactionCreate(BaseModel):
     account_id: int
-    amount: float
+    amount: Decimal
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
@@ -23,9 +24,11 @@ class TransactionCreate(BaseModel):
 
 
 class TransactionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, json_encoders={Decimal: float})
+
     id: int
     account_id: int
-    amount: float
+    amount: Decimal
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None
@@ -37,13 +40,12 @@ class TransactionRead(BaseModel):
     category_id: int | None = None
     raw_email_id: int | None = None
 
-    class Config:
-        from_attributes = True
+
 
 
 class TransactionUpdate(BaseModel):
     account_id: int | None = None
-    amount: float | None = None
+    amount: Decimal | None = None
     merchant: str | None = None
     description: str | None = None
     transaction_date: datetime | None = None

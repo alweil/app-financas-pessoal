@@ -1,8 +1,9 @@
 import enum
+from decimal import Decimal
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -31,9 +32,15 @@ class User(Base):
         DateTime, default=lambda: datetime.now(UTC)
     )
 
-    accounts: Mapped[list["Account"]] = relationship(back_populates="user")
-    categories: Mapped[list["Category"]] = relationship(back_populates="user")
-    budgets: Mapped[list["Budget"]] = relationship(back_populates="user")
+    accounts: Mapped[list["Account"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    categories: Mapped[list["Category"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    budgets: Mapped[list["Budget"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Account(Base):
@@ -44,10 +51,12 @@ class Account(Base):
     bank_name: Mapped[str] = mapped_column(String(80), nullable=False)
     account_type: Mapped[AccountType] = mapped_column(Enum(AccountType), nullable=False)
     nickname: Mapped[Optional[str]] = mapped_column(String(120))
-    last_balance: Mapped[Optional[float]] = mapped_column(Float)
+    last_balance: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
 
     user: Mapped["User"] = relationship(back_populates="accounts")
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates="account")
+    transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates="account", cascade="all, delete-orphan"
+    )
 
 
 class Category(Base):
@@ -86,7 +95,7 @@ class Transaction(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id"), nullable=False)
-    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     merchant: Mapped[Optional[str]] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(String(255))
     transaction_date: Mapped[datetime] = mapped_column(
@@ -112,7 +121,7 @@ class Budget(Base):
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id"), nullable=False
     )
-    amount_limit: Mapped[float] = mapped_column(Float, nullable=False)
+    amount_limit: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     period: Mapped[BudgetPeriod] = mapped_column(Enum(BudgetPeriod), nullable=False)
     start_date: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(UTC)

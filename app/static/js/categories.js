@@ -1,6 +1,6 @@
 import { getAuthHeaders, requestJson } from "./api.js";
 import { state } from "./state.js";
-import { showError } from "./ui.js";
+import { escapeHtml, showError } from "./ui.js";
 
 export function updateCategoryFilters() {
     const select = document.getElementById("transactions-filter-category-id");
@@ -16,7 +16,7 @@ export function updateCategoryFilters() {
     categories
         .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
         .forEach((category) => {
-            const option = `<option value="${category.id}">${category.name}</option>`;
+            const option = `<option value="${category.id}">${escapeHtml(category.name)}</option>`;
             options.push(option);
             formOptions.push(option);
         });

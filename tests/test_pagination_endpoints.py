@@ -8,12 +8,12 @@ from app.models import Account, Budget, BudgetPeriod, Category, Transaction, Use
 def auth_headers(client):
     register = client.post(
         "/auth/register",
-        json={"email": "user@example.com", "password": "secret"},
+        json={"email": "user@example.com", "password": "secret123"},
     )
     assert register.status_code == 201
     token_response = client.post(
         "/auth/token",
-        data={"username": "user@example.com", "password": "secret"},
+        data={"username": "user@example.com", "password": "secret123"},
     )
     assert token_response.status_code == 200
     token = token_response.json()["access_token"]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from decimal import Decimal
 from datetime import datetime
 from typing import Callable, Iterable
 
@@ -288,9 +289,9 @@ def parse_generic(body: str) -> ParsedTransaction | None:
     )
 
 
-def parse_amount(value: str) -> float:
+def parse_amount(value: str) -> Decimal:
     cleaned = value.replace(".", "").replace(",", ".").strip()
-    return float(cleaned)
+    return Decimal(cleaned)
 
 
 def parse_date(text: str) -> datetime | None:

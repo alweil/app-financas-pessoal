@@ -1,6 +1,6 @@
 import { getAuthHeaders, requestJson } from "./api.js";
 import { state } from "./state.js";
-import { clearError, showError, setStatus, formatDate } from "./ui.js";
+import { clearError, showError, setStatus, formatDate, escapeHtml } from "./ui.js";
 
 export async function fetchTransactions() {
     clearError();
@@ -66,13 +66,13 @@ export function renderTransactions(transactions, elementId) {
             <div class="transaction">
                 <div class="transaction-header">
                     <div>
-                        <div class="merchant">${t.merchant || t.description || "Transacao"}</div>
+                        <div class="merchant">${escapeHtml(t.merchant || t.description || "Transacao")}</div>
                         <div class="date">${formatDate(t.transaction_date)}</div>
                     </div>
                     <span class="amount">R$ ${(t.amount || 0).toFixed(2)}</span>
                 </div>
                 <div class="category-row">
-                    <span class="category-badge">${formatCategory(t.category_id)}</span>
+                    <span class="category-badge">${escapeHtml(formatCategory(t.category_id))}</span>
                 </div>
                 <div class="actions-row" style="margin-top: 8px;">
                     <button class="btn btn-small btn-secondary" data-action="edit-transaction" data-transaction-id="${t.id}">Editar</button>
